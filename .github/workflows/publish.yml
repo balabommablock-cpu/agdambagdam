@@ -1,0 +1,254 @@
+name: Publish to npm
+
+# Triggers on:
+#   - Git tags that follow semver (e.g. v0.2.0, v1.0.0)
+#   - Manual dispatch from the Actions tab (for dry-run or forced republish)
+#
+# Publishes three packages to npm.js under the public scope:
+#   - agdambagdam          (browser SDK; was @abacus/sdk-js locally)
+#   - @agdambagdam/sdk-node (Node.js SDK)
+#   - create-agdambagdam    (npx scaffolder)
+#
+# Prereq: set NPM_TOKEN in repo Settings → Secrets and variables → Actions.
+# The token needs "Automation" scope on npmjs.com and access to both the
+# unscoped `agdambagdam` + `create-agdambagdam` names and the `@agdambagdam`
+# organization (create the org first at https://www.npmjs.com/org/create).
+#
+# Provenance: we emit signed attestations so consumers can verify each published
+# version came from this workflow on this commit SHA. See
+# https://docs.npmjs.com/generating-provenance-statements.
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'   # prereleases: v0.2.0-rc.1
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run npm publish with --dry-run (no actual publish)'
+        type: boolean
+        default: true
+      packages:
+        description: 'Comma-separated package names to publish (default: all three)'
+        type: string
+        default: 'agdambagdam,sdk-node,create-agdambagdam'
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false  # never cancel an in-flight publish
+
+permissions:
+  contents: read       # read repo
+  id-token: write      # provenance signing
+
+jobs:
+  # ───────────────────────────────────────────────────────────────
+  # Gate: run the full test suite + Monte Carlo validation before
+  # anything touches npm. If CI is already green on this SHA we still
+  # run here as a belt-and-braces check — publishing is irreversible.
+  # ───────────────────────────────────────────────────────────────
+  validate:
+    name: Validate release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+
+      - name: Build all packages
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Monte Carlo statistical validation
+        run: npx tsx packages/stats/benchmarks/monte-carlo.ts --seed 42
+
+      - name: npm audit (production only)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Verify package versions match tag (tag-triggered runs only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          set -e
+          TAG="${GITHUB_REF_NAME#v}"
+          echo "Release tag: $TAG"
+          for pkg_dir in packages/sdk-js packages/sdk-node packages/create-agdambagdam; do
+            VER=$(node -p "require('./$pkg_dir/package.json').version")
+            if [ "$VER" != "$TAG" ]; then
+              echo "::error::$pkg_dir/package.json version ($VER) does not match tag ($TAG)"
+              exit 1
+            fi
+          done
+          echo "All three packages match the tag."
+
+  # ───────────────────────────────────────────────────────────────
+  # Publish each package. Fails fast on the first rejected publish.
+  # Idempotent: if a version is already published, npm returns
+  # "EPUBLISHCONFLICT" and the step skips cleanly (we translate
+  # that into a non-fatal notice so re-running a workflow is safe).
+  # ───────────────────────────────────────────────────────────────
+  publish-sdk-js:
+    name: Publish agdambagdam (browser SDK)
+    needs: validate
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || contains(github.event.inputs.packages, 'agdambagdam') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build:sdk
+
+      - name: Publish
+        working-directory: packages/sdk-js
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          set -e
+          FLAGS="--access public --provenance"
+          if [ "$DRY_RUN" = "true" ]; then FLAGS="$FLAGS --dry-run"; fi
+          if npm publish $FLAGS; then
+            echo "::notice::Published agdambagdam"
+          else
+            CODE=$?
+            # Exit code 1 with "EPUBLISHCONFLICT" = already published, treat as success
+            if npm view agdambagdam@$(node -p "require('./package.json').version") version >/dev/null 2>&1; then
+              echo "::notice::agdambagdam already published at this version — skipping"
+              exit 0
+            fi
+            exit $CODE
+          fi
+
+  publish-sdk-node:
+    name: Publish @agdambagdam/sdk-node
+    needs: validate
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || contains(github.event.inputs.packages, 'sdk-node') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build -w packages/sdk-node
+
+      - name: Publish
+        working-directory: packages/sdk-node
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          set -e
+          FLAGS="--access public --provenance"
+          if [ "$DRY_RUN" = "true" ]; then FLAGS="$FLAGS --dry-run"; fi
+          if npm publish $FLAGS; then
+            echo "::notice::Published @agdambagdam/sdk-node"
+          else
+            CODE=$?
+            if npm view @agdambagdam/sdk-node@$(node -p "require('./package.json').version") version >/dev/null 2>&1; then
+              echo "::notice::@agdambagdam/sdk-node already published at this version — skipping"
+              exit 0
+            fi
+            exit $CODE
+          fi
+
+  publish-cli:
+    name: Publish create-agdambagdam (CLI)
+    needs: validate
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || contains(github.event.inputs.packages, 'create-agdambagdam') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+
+      - name: Build
+        working-directory: packages/create-agdambagdam
+        run: npm run build
+
+      - name: Publish
+        working-directory: packages/create-agdambagdam
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          set -e
+          FLAGS="--access public --provenance"
+          if [ "$DRY_RUN" = "true" ]; then FLAGS="$FLAGS --dry-run"; fi
+          if npm publish $FLAGS; then
+            echo "::notice::Published create-agdambagdam"
+          else
+            CODE=$?
+            if npm view create-agdambagdam@$(node -p "require('./package.json').version") version >/dev/null 2>&1; then
+              echo "::notice::create-agdambagdam already published at this version — skipping"
+              exit 0
+            fi
+            exit $CODE
+          fi
+
+  # ───────────────────────────────────────────────────────────────
+  # After all three publish, cut a GitHub Release with auto-generated
+  # notes. Only runs on tag pushes (skipped for workflow_dispatch).
+  # ───────────────────────────────────────────────────────────────
+  release:
+    name: GitHub Release
+    needs: [publish-sdk-js, publish-sdk-node, publish-cli]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          body: |
+            ## 📦 Published packages
+
+            - [`agdambagdam`](https://www.npmjs.com/package/agdambagdam) — browser SDK
+            - [`@agdambagdam/sdk-node`](https://www.npmjs.com/package/@agdambagdam/sdk-node) — Node.js SDK
+            - [`create-agdambagdam`](https://www.npmjs.com/package/create-agdambagdam) — `npx create-agdambagdam` scaffolder
+
+            All three published with signed provenance attestations.
+
+            ## 🔬 Statistical validation
+
+            Every release passes the 10,000-trial Monte Carlo validation suite. See [BENCHMARKS.md](BENCHMARKS.md) and the committed results under [`packages/stats/benchmarks/results/`](packages/stats/benchmarks/results/).
+
+            ## 📖 Quickstart
+
+            `npx create-agdambagdam` or read [QUICKSTART.md](QUICKSTART.md).
