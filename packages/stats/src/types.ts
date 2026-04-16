@@ -84,6 +84,14 @@ export interface BayesianOptions {
   metricType?: MetricType;
   /** Minimum confidence to make a recommendation (default 0.95) */
   minConfidence?: number;
+  /**
+   * Seed for the Monte Carlo PRNG (mulberry32).
+   *
+   * Omit (or pass `undefined`) for non-deterministic sampling — we'll use
+   * `Date.now()`. Pass a fixed integer if you need reproducible output,
+   * e.g. for snapshot tests or sharing a specific analysis with a colleague.
+   */
+  seed?: number;
 }
 
 export interface SequentialOptions {

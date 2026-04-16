@@ -52,8 +52,9 @@ function betaBinomialTest(
   numSamples: number,
   ciWidth: number
 ): BayesianResult {
-  const { priorAlpha = 1, priorBeta = 1, minConfidence = 0.95 } = options;
-  const rng = mulberry32(42);
+  const { priorAlpha = 1, priorBeta = 1, minConfidence = 0.95, seed } = options;
+  // Non-deterministic by default; pass `seed` for reproducibility.
+  const rng = mulberry32(seed ?? Date.now() >>> 0);
 
   const k = variants.length;
 
@@ -155,9 +156,11 @@ function normalNormalTest(
     priorMean = 0,
     priorVariance = 1e6, // very diffuse prior
     minConfidence = 0.95,
+    seed,
   } = options;
 
-  const rng = mulberry32(42);
+  // Non-deterministic by default; pass `seed` for reproducibility.
+  const rng = mulberry32(seed ?? Date.now() >>> 0);
   const k = variants.length;
 
   // Posterior parameters for Normal-Normal conjugate model

@@ -290,10 +290,15 @@ export default function Landing() {
           <div className="animate-fade-in-up anim-delay-500 mt-16 max-w-lg mx-auto">
             <div className="rounded-2xl border border-white/[0.08] bg-slate-900/80 backdrop-blur p-6 shadow-2xl shadow-black/40">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Live Experiment</span>
-                <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Running
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Example Experiment
+                </span>
+                <span
+                  className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium"
+                  title="Illustrative example of a running A/B test"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                  Illustrative
                 </span>
               </div>
 

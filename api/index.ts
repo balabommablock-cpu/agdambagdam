@@ -1,53 +1,48 @@
+/**
+ * Vercel serverless entry. Delegates to the shared createApp() factory in
+ * packages/server so security middleware, rate limits, and error handling
+ * are identical to the Node entry at packages/server/src/index.ts.
+ *
+ * Rate limiting on serverless:
+ *   The default MemoryStore is per-function-instance, so per-IP limits
+ *   are multiplied by the number of warm instances. To enforce a single
+ *   global limit, set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN
+ *   in Vercel env vars; we'll auto-wire RedisStore below.
+ */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import express, { Request, Response, NextFunction } from 'express';
-import cors from 'cors';
+import type { Store } from 'express-rate-limit';
+import { createApp } from '../packages/server/src/createApp';
 
-// Import route handlers
-import experimentsRouter from '../packages/server/src/routes/experiments';
-import assignmentRouter from '../packages/server/src/routes/assignment';
-import eventsRouter from '../packages/server/src/routes/events';
-import flagsRouter from '../packages/server/src/routes/flags';
-import metricsRouter from '../packages/server/src/routes/metrics';
-import projectsRouter from '../packages/server/src/routes/projects';
-
-const app = express();
-
-app.use(cors());
-app.use(express.json({ limit: '1mb' }));
-
-// Health check
-app.get('/api/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', service: 'abacus-server', timestamp: new Date().toISOString() });
-});
-
-// Routes
-app.use('/api/experiments', experimentsRouter);
-app.use('/api/assign', assignmentRouter);
-app.use('/api/events', eventsRouter);
-app.use('/api/flags', flagsRouter);
-app.use('/api/metrics', metricsRouter);
-app.use('/api/projects', projectsRouter);
-
-// 404
-app.use('/api', (_req: Request, res: Response) => {
-  res.status(404).json({ error: 'Not found' });
-});
-
-// Error handling
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('Unhandled error:', err);
-  const pgError = err as any;
-  if (pgError.code === '23505') {
-    res.status(409).json({ error: 'Duplicate entry.' });
-    return;
+// Lazily construct a shared rate-limit store if Upstash is configured.
+function resolveRateLimitStore(): Store | undefined {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return undefined;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { Redis } = require('@upstash/redis');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { RedisStore } = require('rate-limit-redis');
+    const client = new Redis({ url, token });
+    return new RedisStore({
+      sendCommand: (...args: string[]) => client.sendCommand(args),
+      prefix: 'abacus:rl:',
+    });
+  } catch {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[abacus] UPSTASH_REDIS_* env vars set but @upstash/redis / rate-limit-redis not installed. ' +
+        'Falling back to per-instance memory store.'
+    );
+    return undefined;
   }
-  if (pgError.code === '23503') {
-    res.status(400).json({ error: 'Referenced record not found.' });
-    return;
-  }
-  res.status(500).json({ error: 'Internal server error' });
+}
+
+const app = createApp({
+  rateLimitStore: resolveRateLimitStore(),
+  trustProxy: 1,
 });
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-  return (app as any)(req, res);
+  return (app as unknown as (req: unknown, res: unknown) => unknown)(req, res);
 }

@@ -145,25 +145,28 @@ export default function Layout({ children }: LayoutProps) {
 
           <div className="flex-1" />
 
-          {/* Search */}
-          <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          {/* Search — disabled until the backend search endpoint ships. TODO: wire to /api/experiments?q= */}
+          <div className="relative hidden md:block" title="Search is coming soon">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
             <input
               type="text"
-              placeholder="Search experiments..."
+              placeholder="Search — coming soon"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-64 pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+              disabled
+              aria-disabled="true"
+              className="w-64 pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-400 cursor-not-allowed"
             />
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-700 rounded">
-              /
-            </kbd>
           </div>
 
-          {/* Notifications */}
-          <button className="relative p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+          {/* Notifications — button is disabled until a real notification stream exists. */}
+          <button
+            className="relative p-2 text-slate-300 cursor-not-allowed"
+            disabled
+            aria-label="Notifications (coming soon)"
+            title="Notifications are coming soon"
+          >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger-500 rounded-full" />
           </button>
 
           {/* Profile */}

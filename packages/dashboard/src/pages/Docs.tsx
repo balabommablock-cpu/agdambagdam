@@ -621,8 +621,11 @@ export default function Docs() {
                     <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">The simplest approach. Add this to any HTML page -- no build tools needed.</p>
                   </div>
                   <CodeBlock
-                    code={`<!-- Drop this into your HTML page -->
-<script src="/path/to/abacus.js"></script>
+                    code={`<!-- Drop this into your HTML page.
+     Copy packages/sdk-js/dist/abacus.js from the Agdam Bagdam repo into your
+     project's public assets, then reference it here. (An npm package is
+     coming; for now install the SDK via 'npm install github:balabommablock-cpu/agdambagdam#main'.) -->
+<script src="/assets/abacus.js"></script>
 <script>
   // 1. Connect to your Agdam Bagdam server
   var ab = new Abacus({
