@@ -38,7 +38,7 @@ const CACHE_TTL = 10_000; // 10s — short TTL so changes propagate fast
  */
 function hashToFloat(input: string, seed: number = 0): number {
   const hash = murmurhash.murmur3(input, seed);
-  return (hash >>> 0) / 0xFFFFFFFF;
+  return (hash >>> 0) / 0x100000000;
 }
 
 /**
@@ -147,17 +147,13 @@ export async function assignVariant(
 
   const { experiment, variants } = loaded;
 
-  // Experiment must be running
-  if (experiment.status !== 'running') {
-    return NOT_IN_EXPERIMENT;
-  }
-
   // Must have variants
   if (variants.length === 0) {
     return NOT_IN_EXPERIMENT;
   }
 
-  // Check existing assignment first (fast path)
+  // Check existing assignment first (fast path) — BEFORE status check
+  // so completed experiments still return existing assignments during rollout
   const existing = await queryOne<{ variant_key: string; payload: any }>(
     `SELECT v.key as variant_key, v.payload
      FROM assignments a
@@ -174,9 +170,15 @@ export async function assignVariant(
     };
   }
 
-  // Evaluate targeting rules
-  if (context && experiment.targeting_rules && experiment.targeting_rules.length > 0) {
-    const targeted = evaluateTargeting(experiment.targeting_rules, context);
+  // Experiment must be running for NEW assignments
+  if (experiment.status !== 'running') {
+    return NOT_IN_EXPERIMENT;
+  }
+
+  // Evaluate targeting rules — treat missing context as empty (never skip targeting)
+  const userContext = context || {};
+  if (experiment.targeting_rules && experiment.targeting_rules.length > 0) {
+    const targeted = evaluateTargeting(experiment.targeting_rules, userContext);
     if (!targeted) {
       return NOT_IN_EXPERIMENT;
     }

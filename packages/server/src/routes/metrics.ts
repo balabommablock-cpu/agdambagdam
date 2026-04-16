@@ -70,7 +70,13 @@ router.post('/', validate({ body: createMetricSchema }), async (req: Request, re
 
 // PUT /api/metrics/:id — update metric
 router.put('/:id', validate({ params: idParamSchema, body: updateMetricSchema }), async (req: Request, res: Response) => {
-  const existing = await queryOne('SELECT id FROM metrics WHERE id = $1', [req.params.id]);
+  const projectId = req.projectId;
+  if (!projectId) {
+    res.status(400).json({ error: 'Missing project_id.' });
+    return;
+  }
+
+  const existing = await queryOne('SELECT id FROM metrics WHERE id = $1 AND project_id = $2', [req.params.id, projectId]);
   if (!existing) {
     res.status(404).json({ error: 'Metric not found.' });
     return;
@@ -106,7 +112,13 @@ router.put('/:id', validate({ params: idParamSchema, body: updateMetricSchema })
 
 // DELETE /api/metrics/:id — delete metric
 router.delete('/:id', validate({ params: idParamSchema }), async (req: Request, res: Response) => {
-  const existing = await queryOne('SELECT id FROM metrics WHERE id = $1', [req.params.id]);
+  const projectId = req.projectId;
+  if (!projectId) {
+    res.status(400).json({ error: 'Missing project_id.' });
+    return;
+  }
+
+  const existing = await queryOne('SELECT id FROM metrics WHERE id = $1 AND project_id = $2', [req.params.id, projectId]);
   if (!existing) {
     res.status(404).json({ error: 'Metric not found.' });
     return;

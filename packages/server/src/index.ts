@@ -20,7 +20,7 @@ app.use(express.json({ limit: '1mb' }));
 
 // --- Health check ---
 app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', service: 'abacus-server', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', service: 'agdam-bagdam', timestamp: new Date().toISOString() });
 });
 
 // --- Routes ---

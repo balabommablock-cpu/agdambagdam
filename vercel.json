@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build:stats && npm run build -w packages/dashboard",
+  "outputDirectory": "packages/dashboard/dist",
+  "functions": {
+    "api/**/*.ts": {
+      "maxDuration": 30,
+      "includeFiles": "packages/server/src/**"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/migrate", "destination": "/api/migrate.ts" },
+    { "source": "/api/(.*)", "destination": "/api/index.ts" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}

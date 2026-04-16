@@ -7,7 +7,7 @@ import { getExperimentResults } from '../services/results';
 import { clearExperimentCache } from '../services/assignment';
 
 function paramId(req: Request): string {
-  const id = paramId(req);
+  const id = req.params.id;
   return Array.isArray(id) ? id[0] : id;
 }
 
@@ -138,9 +138,15 @@ router.post('/', validate({ body: createExperimentSchema }), async (req: Request
 
 // GET /api/experiments/:id — get experiment details
 router.get('/:id', validate({ params: idParamSchema }), async (req: Request, res: Response) => {
+  const projectId = req.projectId;
+  if (!projectId) {
+    res.status(400).json({ error: 'Missing project_id.' });
+    return;
+  }
+
   const experiment = await queryOne(
-    'SELECT * FROM experiments WHERE id = $1',
-    [paramId(req)]
+    'SELECT * FROM experiments WHERE id = $1 AND project_id = $2',
+    [paramId(req), projectId]
   );
 
   if (!experiment) {
@@ -166,9 +172,15 @@ router.get('/:id', validate({ params: idParamSchema }), async (req: Request, res
 
 // PUT /api/experiments/:id — update experiment
 router.put('/:id', validate({ params: idParamSchema, body: updateExperimentSchema }), async (req: Request, res: Response) => {
+  const projectId = req.projectId;
+  if (!projectId) {
+    res.status(400).json({ error: 'Missing project_id.' });
+    return;
+  }
+
   const existing = await queryOne<{ status: string; project_id: string; key: string }>(
-    'SELECT status, project_id, key FROM experiments WHERE id = $1',
-    [paramId(req)]
+    'SELECT status, project_id, key FROM experiments WHERE id = $1 AND project_id = $2',
+    [paramId(req), projectId]
   );
 
   if (!existing) {
@@ -237,9 +249,15 @@ router.put('/:id', validate({ params: idParamSchema, body: updateExperimentSchem
 
 // POST /api/experiments/:id/start
 router.post('/:id/start', validate({ params: idParamSchema }), async (req: Request, res: Response) => {
+  const projectId = req.projectId;
+  if (!projectId) {
+    res.status(400).json({ error: 'Missing project_id.' });
+    return;
+  }
+
   const experiment = await queryOne<{ status: string; project_id: string; key: string }>(
-    'SELECT status, project_id, key FROM experiments WHERE id = $1',
-    [paramId(req)]
+    'SELECT status, project_id, key FROM experiments WHERE id = $1 AND project_id = $2',
+    [paramId(req), projectId]
   );
 
   if (!experiment) {
@@ -270,9 +288,15 @@ router.post('/:id/start', validate({ params: idParamSchema }), async (req: Reque
 
 // POST /api/experiments/:id/pause
 router.post('/:id/pause', validate({ params: idParamSchema }), async (req: Request, res: Response) => {
+  const projectId = req.projectId;
+  if (!projectId) {
+    res.status(400).json({ error: 'Missing project_id.' });
+    return;
+  }
+
   const experiment = await queryOne<{ status: string; project_id: string; key: string }>(
-    'SELECT status, project_id, key FROM experiments WHERE id = $1',
-    [paramId(req)]
+    'SELECT status, project_id, key FROM experiments WHERE id = $1 AND project_id = $2',
+    [paramId(req), projectId]
   );
 
   if (!experiment) {
@@ -295,9 +319,15 @@ router.post('/:id/pause', validate({ params: idParamSchema }), async (req: Reque
 
 // POST /api/experiments/:id/complete
 router.post('/:id/complete', validate({ params: idParamSchema }), async (req: Request, res: Response) => {
+  const projectId = req.projectId;
+  if (!projectId) {
+    res.status(400).json({ error: 'Missing project_id.' });
+    return;
+  }
+
   const experiment = await queryOne<{ status: string; project_id: string; key: string }>(
-    'SELECT status, project_id, key FROM experiments WHERE id = $1',
-    [paramId(req)]
+    'SELECT status, project_id, key FROM experiments WHERE id = $1 AND project_id = $2',
+    [paramId(req), projectId]
   );
 
   if (!experiment) {
@@ -321,6 +351,22 @@ router.post('/:id/complete', validate({ params: idParamSchema }), async (req: Re
 
 // GET /api/experiments/:id/results
 router.get('/:id/results', validate({ params: idParamSchema }), async (req: Request, res: Response) => {
+  const projectId = req.projectId;
+  if (!projectId) {
+    res.status(400).json({ error: 'Missing project_id.' });
+    return;
+  }
+
+  // Verify experiment belongs to this project
+  const experiment = await queryOne(
+    'SELECT id FROM experiments WHERE id = $1 AND project_id = $2',
+    [paramId(req), projectId]
+  );
+  if (!experiment) {
+    res.status(404).json({ error: 'Experiment not found.' });
+    return;
+  }
+
   try {
     const results = await getExperimentResults(paramId(req));
     res.json({ results });
@@ -335,13 +381,24 @@ router.get('/:id/results', validate({ params: idParamSchema }), async (req: Requ
 
 // DELETE /api/experiments/:id — archive experiment
 router.delete('/:id', validate({ params: idParamSchema }), async (req: Request, res: Response) => {
-  const experiment = await queryOne<{ project_id: string; key: string }>(
-    'SELECT project_id, key FROM experiments WHERE id = $1',
-    [paramId(req)]
+  const projectId = req.projectId;
+  if (!projectId) {
+    res.status(400).json({ error: 'Missing project_id.' });
+    return;
+  }
+
+  const experiment = await queryOne<{ project_id: string; key: string; status: string }>(
+    'SELECT project_id, key, status FROM experiments WHERE id = $1 AND project_id = $2',
+    [paramId(req), projectId]
   );
 
   if (!experiment) {
     res.status(404).json({ error: 'Experiment not found.' });
+    return;
+  }
+
+  if (experiment.status === 'running') {
+    res.status(400).json({ error: 'Cannot archive a running experiment. Pause or complete it first.' });
     return;
   }
 

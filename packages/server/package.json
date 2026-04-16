@@ -9,6 +9,7 @@
     "migrate": "tsx src/db/migrate.ts"
   },
   "dependencies": {
+    "@abacus/stats": "*",
     "express": "^5.1.0",
     "pg": "^8.16.0",
     "cors": "^2.8.5",

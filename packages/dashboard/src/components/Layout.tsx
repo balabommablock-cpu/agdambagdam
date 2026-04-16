@@ -56,7 +56,7 @@ export default function Layout({ children }: LayoutProps) {
             <BarChart3 className="w-5 h-5 text-white" />
           </div>
           <span className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight">
-            Abacus
+            Agdam Bagdam
           </span>
           <button
             className="ml-auto lg:hidden text-slate-400 hover:text-slate-600"

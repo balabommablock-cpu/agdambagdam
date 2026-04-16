@@ -1,4 +1,4 @@
-# Abacus — Open-Source Experimentation Platform
+# Agdam Bagdam — Open-Source Experimentation Platform
 
 ## What This Is
 A/B testing, feature flags, and statistical analysis platform that makes $500K/year commercial tools (VWO, Optimizely, LaunchDarkly, Statsig) obsolete. MIT-licensed, self-hostable, zero vendor lock-in.

@@ -40,7 +40,7 @@ const evaluateFlagsSchema = z.object({
 
 function hashToPercentage(flagKey: string, userId: string): number {
   const hash = murmurhash.murmur3(`${flagKey}:${userId}`, 0);
-  return ((hash >>> 0) / 0xFFFFFFFF) * 100;
+  return ((hash >>> 0) / 0x100000000) * 100;
 }
 
 // --- Admin routes (full auth) ---
@@ -83,7 +83,13 @@ router.post('/', authenticate, validate({ body: createFlagSchema }), async (req:
 
 // PUT /api/flags/:id — update flag
 router.put('/:id', authenticate, validate({ params: idParamSchema, body: updateFlagSchema }), async (req: Request, res: Response) => {
-  const existing = await queryOne('SELECT id FROM feature_flags WHERE id = $1', [req.params.id]);
+  const projectId = req.projectId;
+  if (!projectId) {
+    res.status(400).json({ error: 'Missing project_id.' });
+    return;
+  }
+
+  const existing = await queryOne('SELECT id FROM feature_flags WHERE id = $1 AND project_id = $2', [req.params.id, projectId]);
   if (!existing) {
     res.status(404).json({ error: 'Feature flag not found.' });
     return;
@@ -133,9 +139,15 @@ router.put('/:id', authenticate, validate({ params: idParamSchema, body: updateF
 
 // POST /api/flags/:id/toggle — enable/disable
 router.post('/:id/toggle', authenticate, validate({ params: idParamSchema }), async (req: Request, res: Response) => {
+  const projectId = req.projectId;
+  if (!projectId) {
+    res.status(400).json({ error: 'Missing project_id.' });
+    return;
+  }
+
   const flag = await queryOne<{ enabled: boolean }>(
-    'SELECT enabled FROM feature_flags WHERE id = $1',
-    [req.params.id]
+    'SELECT enabled FROM feature_flags WHERE id = $1 AND project_id = $2',
+    [req.params.id, projectId]
   );
 
   if (!flag) {
@@ -196,8 +208,8 @@ router.post('/evaluate', authenticateClient, validate({ body: evaluateFlagsSchem
       }
     }
 
-    // User qualifies — return true (or could be the configured value)
-    flags[flag.key] = true;
+    // User qualifies — return the configured value (supports boolean, string, number, JSON)
+    flags[flag.key] = flag.default_value !== undefined ? flag.default_value : true;
   }
 
   res.json({ flags });

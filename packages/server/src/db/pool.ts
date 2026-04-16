@@ -7,6 +7,7 @@ export const pool = new Pool({
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
+  ssl: DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false },
 });
 
 pool.on('error', (err) => {

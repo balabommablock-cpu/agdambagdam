@@ -61,7 +61,7 @@ export function checkSrm(
   const pValue = 1 - chiSquaredCdf(chiSquared, df);
 
   // Severity assessment
-  const hasMismatch = pValue < 0.001; // Standard threshold for SRM
+  const hasMismatch = pValue < 0.01; // Aligned with warning threshold — SRM is a safety check, false negatives are costly
   let severity: 'none' | 'warning' | 'critical';
   if (pValue < 0.0001) {
     severity = 'critical';
