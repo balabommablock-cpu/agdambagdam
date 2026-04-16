@@ -10,7 +10,7 @@ Free. Self-hosted. Better statistics than tools charging $500K/year.
 
 Agdam Bagdam is a complete A/B testing and feature flag platform with a world-class statistics engine. It gives you everything you need to run rigorous experiments — Bayesian analysis, Frequentist testing, CUPED variance reduction, sequential testing, SRM detection, and multi-armed bandits — all open source, all free.
 
-**Live demo:** [abacus-eight-kappa.vercel.app](https://abacus-eight-kappa.vercel.app)
+**Live demo:** [boredfolio.com/agdambagdam](https://boredfolio.com/agdambagdam) · **Docs:** [boredfolio.com/agdambagdam/docs](https://boredfolio.com/agdambagdam/docs)
 
 ## Why?
 
