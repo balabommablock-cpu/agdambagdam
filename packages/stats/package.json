@@ -5,7 +5,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "node --test src/**/*.test.ts"
+    "test": "npx tsx --test src/stats.test.ts"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

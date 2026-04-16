@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc && node build.js",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "test": "npx tsx --test src/hash.test.ts"
   },
   "devDependencies": {
     "typescript": "^5.7.0"
