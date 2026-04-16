@@ -5,15 +5,23 @@ import {
   BookOpen,
   Key,
   FlaskConical,
-  Users,
   Activity,
-  Flag,
-  Target,
   Code,
   BarChart3,
   ChevronRight,
   Zap,
   ArrowUp,
+  Target,
+  AlertTriangle,
+  Lightbulb,
+  Info,
+  Clock,
+  Eye,
+  MousePointerClick,
+  TrendingUp,
+  Shield,
+  Gauge,
+  StopCircle,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -60,6 +68,74 @@ function CodeBlock({ code, id, copied, onCopy }: {
 }
 
 // ---------------------------------------------------------------------------
+// Annotated code block (for results with arrows/explanations)
+// ---------------------------------------------------------------------------
+function AnnotatedBlock({ lines, id, copied, onCopy }: {
+  lines: { code: string; annotation?: string; color?: 'green' | 'amber' | 'blue' | 'slate' }[];
+  id: string;
+  copied: string;
+  onCopy: (text: string, id: string) => void;
+}) {
+  const rawCode = lines.map(l => l.code).join('\n');
+  return (
+    <div className="relative group">
+      <CopyButton text={rawCode} id={id} copied={copied} onCopy={onCopy} />
+      <div className="bg-slate-900 rounded-lg overflow-x-auto p-4 space-y-0.5">
+        {lines.map((line, i) => {
+          const annotationColor = {
+            green: 'text-emerald-400',
+            amber: 'text-amber-400',
+            blue: 'text-blue-400',
+            slate: 'text-slate-500',
+          }[line.color ?? 'slate'];
+          return (
+            <div key={i} className="flex flex-wrap gap-x-4 items-baseline">
+              <code className="text-xs text-slate-100 whitespace-pre">{line.code}</code>
+              {line.annotation && (
+                <span className={`text-[11px] ${annotationColor} whitespace-nowrap`}>{line.annotation}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Callout boxes
+// ---------------------------------------------------------------------------
+function Callout({ type, children }: {
+  type: 'tip' | 'warning' | 'info';
+  children: React.ReactNode;
+}) {
+  const styles = {
+    tip: {
+      bg: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800',
+      icon: <Lightbulb className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />,
+      text: 'text-emerald-800 dark:text-emerald-300',
+    },
+    warning: {
+      bg: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800',
+      icon: <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />,
+      text: 'text-amber-800 dark:text-amber-300',
+    },
+    info: {
+      bg: 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800',
+      icon: <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />,
+      text: 'text-blue-800 dark:text-blue-300',
+    },
+  };
+  const s = styles[type];
+  return (
+    <div className={`flex gap-3 p-4 rounded-lg border ${s.bg}`}>
+      {s.icon}
+      <div className={`text-sm ${s.text}`}>{children}</div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // HTTP method badge
 // ---------------------------------------------------------------------------
 function MethodBadge({ method }: { method: string }) {
@@ -77,7 +153,7 @@ function MethodBadge({ method }: { method: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Endpoint documentation block
+// Endpoint documentation block (for API Reference section)
 // ---------------------------------------------------------------------------
 function Endpoint({ method, path, description, reqBody, resBody, id, copied, onCopy }: {
   method: string;
@@ -118,15 +194,10 @@ function Endpoint({ method, path, description, reqBody, resBody, id, copied, onC
 // Table of contents items
 // ---------------------------------------------------------------------------
 const TOC = [
-  { id: 'quick-start', label: 'Quick Start', icon: Zap },
-  { id: 'authentication', label: 'Authentication', icon: Key },
-  { id: 'experiments', label: 'Experiments API', icon: FlaskConical },
-  { id: 'assignment', label: 'Assignment API', icon: Users },
-  { id: 'events', label: 'Events API', icon: Activity },
-  { id: 'flags', label: 'Feature Flags API', icon: Flag },
-  { id: 'metrics', label: 'Metrics API', icon: Target },
-  { id: 'sdk', label: 'SDK Integration', icon: Code },
-  { id: 'results', label: 'Understanding Results', icon: BarChart3 },
+  { id: 'first-test', label: 'Your First A/B Test', icon: Zap },
+  { id: 'add-to-site', label: 'Adding to Your Website', icon: Code },
+  { id: 'understanding-results', label: 'Understanding Results', icon: BarChart3 },
+  { id: 'api-reference', label: 'Full API Reference', icon: BookOpen },
 ];
 
 // ---------------------------------------------------------------------------
@@ -134,7 +205,8 @@ const TOC = [
 // ---------------------------------------------------------------------------
 export default function Docs() {
   const [copied, setCopied] = useState('');
-  const [activeSDK, setActiveSDK] = useState<'browser' | 'react' | 'node' | 'curl'>('browser');
+  const [activeSDK, setActiveSDK] = useState<'html' | 'react' | 'node' | 'curl'>('html');
+  const [showFullRef, setShowFullRef] = useState(false);
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -151,7 +223,7 @@ export default function Docs() {
         <div className="sticky top-6 space-y-1">
           <div className="flex items-center gap-2 mb-4">
             <BookOpen className="w-4 h-4 text-primary-600" />
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">On this page</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Guide</span>
           </div>
           {TOC.map(({ id, label, icon: Icon }) => (
             <a
@@ -167,672 +239,366 @@ export default function Docs() {
       </nav>
 
       {/* Main content */}
-      <div className="flex-1 min-w-0 space-y-12 pb-20">
+      <div className="flex-1 min-w-0 space-y-16 pb-20">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">API Reference</h1>
-          <p className="text-sm text-slate-500 mt-2 max-w-2xl">
-            Everything you need to integrate Agdam Bagdam into your product. From first API call to production-grade experimentation in 30 minutes.
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">How to A/B Test Anything</h1>
+          <p className="text-base text-slate-500 mt-2 max-w-2xl">
+            A step-by-step guide to running experiments with Agdam Bagdam. No statistics degree required.
           </p>
-          <div className="flex items-center gap-2 mt-4">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
-              Base URL
-            </span>
-            <code className="text-sm font-mono text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded">
-              {BASE}
-            </code>
-          </div>
         </div>
 
         {/* ================================================================
-            1. QUICK START
+            PAGE 1: YOUR FIRST A/B TEST IN 5 MINUTES
         ================================================================ */}
-        <section id="quick-start">
-          <div className="flex items-center gap-3 mb-4">
+        <section id="first-test">
+          <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 bg-primary-50 dark:bg-primary-950 rounded-lg flex items-center justify-center">
               <Zap className="w-4 h-4 text-primary-600" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Quick Start</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Your First A/B Test in 5 Minutes</h2>
           </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">Three steps. Zero to first experiment.</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-8 ml-11">
+            Want to test if a green signup button gets more clicks than a blue one? Here is how.
+          </p>
 
-          <div className="space-y-6">
-            {/* Step 1 */}
-            <div className="card p-5">
+          <div className="space-y-8">
+            {/* Step 1: Get Your API Key */}
+            <div className="card p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-6 h-6 rounded-full bg-primary-600 text-white text-xs font-bold flex items-center justify-center">1</div>
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Create an experiment</h3>
+                <div className="w-7 h-7 rounded-full bg-primary-600 text-white text-xs font-bold flex items-center justify-center">1</div>
+                <div className="flex items-center gap-2">
+                  <Key className="w-4 h-4 text-amber-500" />
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">Get Your API Key</h3>
+                </div>
               </div>
-              <CodeBlock
-                code={`curl -X POST ${BASE}/api/experiments \\
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 ml-10">
+                Think of your API key like a password that lets your website talk to Agdam Bagdam. You also need a Project ID, which tells Agdam Bagdam <em>which project</em> this data belongs to.
+              </p>
+              <div className="ml-10">
+                <Callout type="tip">
+                  Go to <a href="/settings" className="font-medium underline">Settings</a> in the dashboard. Your API key and Project ID are right at the top. Copy both -- you will need them for every step below.
+                </Callout>
+              </div>
+              <div className="mt-4 ml-10">
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">Every request to Agdam Bagdam includes these two headers. Here is what they look like:</p>
+                <CodeBlock
+                  code={`-H "x-api-key: ab_live_xxxxxxxxxxxx"       # Your API key (authenticates you)
+-H "x-project-id: proj_xxxxxxxxxxxx"      # Your project ID (scopes data)`}
+                  id="step1-headers"
+                  copied={copied}
+                  onCopy={handleCopy}
+                />
+              </div>
+            </div>
+
+            {/* Step 2: Create Something to Measure */}
+            <div className="card p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-7 h-7 rounded-full bg-primary-600 text-white text-xs font-bold flex items-center justify-center">2</div>
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-teal-500" />
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">Create Something to Measure</h3>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 ml-10">
+                Before testing, you need to tell Agdam Bagdam what &quot;winning&quot; means. Is it more clicks? More signups? More purchases? This is called a <strong>metric</strong>.
+              </p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 ml-10">
+                Let us say you want to count how many people click the signup button. Run this command in your terminal:
+              </p>
+              <div className="ml-10">
+                <CodeBlock
+                  code={`curl -X POST ${BASE}/api/metrics \\
   -H "Content-Type: application/json" \\
   -H "x-api-key: YOUR_API_KEY" \\
   -H "x-project-id: YOUR_PROJECT_ID" \\
   -d '{
-    "name": "Checkout Button Color",
-    "key": "checkout_btn_color",
+    "key": "signup_clicks",
+    "name": "Signup Button Clicks",
+    "type": "conversion",
+    "event_name": "signup_click"
+  }'`}
+                  id="step2-metric"
+                  copied={copied}
+                  onCopy={handleCopy}
+                />
+              </div>
+              <div className="mt-3 ml-10">
+                <Callout type="info">
+                  This tells Agdam Bagdam: &quot;Count how many people click the signup button. Each click is either a yes or no (conversion).&quot; You only need to create a metric once -- it gets reused across experiments.
+                </Callout>
+              </div>
+            </div>
+
+            {/* Step 3: Create Your Test */}
+            <div className="card p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-7 h-7 rounded-full bg-primary-600 text-white text-xs font-bold flex items-center justify-center">3</div>
+                <div className="flex items-center gap-2">
+                  <FlaskConical className="w-4 h-4 text-violet-500" />
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">Create Your Test</h3>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 ml-10">
+                Now create the actual A/B test. You need a name and two versions to compare. Let us test a blue signup button vs. a green one.
+              </p>
+              <div className="ml-10">
+                <CodeBlock
+                  code={`curl -X POST ${BASE}/api/experiments \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "x-project-id: YOUR_PROJECT_ID" \\
+  -d '{
+    "name": "Signup Button Color",
+    "key": "signup-button-color",
+    "description": "Test if a green button gets more signups than blue",
     "variants": [
-      { "name": "control", "weight": 50 },
-      { "name": "green_button", "weight": 50 }
-    ]
+      { "name": "blue", "weight": 50 },
+      { "name": "green", "weight": 50 }
+    ],
+    "targeting_rules": {
+      "percentage": 100
+    }
   }'`}
-                id="qs-1"
-                copied={copied}
-                onCopy={handleCopy}
-              />
+                  id="step3-experiment"
+                  copied={copied}
+                  onCopy={handleCopy}
+                />
+              </div>
+              <div className="mt-4 ml-10">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">What each field means:</p>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 space-y-2.5">
+                  <div className="flex items-start gap-2">
+                    <ChevronRight className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
+                    <span className="text-sm text-slate-700 dark:text-slate-300"><strong>&quot;name&quot;</strong> -- A human-readable label. Shows up in the dashboard.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <ChevronRight className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
+                    <span className="text-sm text-slate-700 dark:text-slate-300"><strong>&quot;key&quot;</strong> -- A unique ID for this test. Your code will reference this. Use lowercase and hyphens.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <ChevronRight className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
+                    <span className="text-sm text-slate-700 dark:text-slate-300"><strong>&quot;variants&quot;</strong> -- The versions you are testing. &quot;weight: 50&quot; means 50% of visitors see this version.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <ChevronRight className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
+                    <span className="text-sm text-slate-700 dark:text-slate-300"><strong>&quot;targeting_rules.percentage&quot;</strong> -- What percentage of your total traffic enters this test. 100 = everyone.</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Step 2 */}
-            <div className="card p-5">
+            {/* Step 4: Start the Test */}
+            <div className="card p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-6 h-6 rounded-full bg-primary-600 text-white text-xs font-bold flex items-center justify-center">2</div>
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Assign users and render variants</h3>
+                <div className="w-7 h-7 rounded-full bg-primary-600 text-white text-xs font-bold flex items-center justify-center">4</div>
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-rose-500" />
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">Start the Test</h3>
+                </div>
               </div>
-              <CodeBlock
-                code={`curl -X POST ${BASE}/api/assign \\
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 ml-10">
+                Your test was created in &quot;draft&quot; mode. Flip the switch to make it live. Replace <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs">EXPERIMENT_ID</code> with the <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs">id</code> from Step 3 response.
+              </p>
+              <div className="ml-10">
+                <CodeBlock
+                  code={`curl -X POST ${BASE}/api/experiments/EXPERIMENT_ID/start \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "x-project-id: YOUR_PROJECT_ID"`}
+                  id="step4-start"
+                  copied={copied}
+                  onCopy={handleCopy}
+                />
+              </div>
+              <div className="mt-3 ml-10">
+                <Callout type="tip">
+                  Your test is now live. From this moment on, Agdam Bagdam can assign visitors to &quot;blue&quot; or &quot;green&quot;.
+                </Callout>
+              </div>
+            </div>
+
+            {/* Step 5: Show Different Versions */}
+            <div className="card p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-7 h-7 rounded-full bg-primary-600 text-white text-xs font-bold flex items-center justify-center">5</div>
+                <div className="flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-cyan-500" />
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">Show Different Versions to Different Users</h3>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 ml-10">
+                When someone visits your site, ask Agdam Bagdam which version to show them. You pass a user ID (any unique string -- an email, a cookie ID, anything).
+              </p>
+              <div className="ml-10">
+                <CodeBlock
+                  code={`curl -X POST ${BASE}/api/assign \\
   -H "Content-Type: application/json" \\
   -H "x-api-key: YOUR_API_KEY" \\
   -H "x-project-id: YOUR_PROJECT_ID" \\
   -d '{
-    "experiment_key": "checkout_btn_color",
-    "user_id": "user_123"
-  }'
-
-# Response:
-# { "variant": "green_button", "experiment_key": "checkout_btn_color" }`}
-                id="qs-2"
-                copied={copied}
-                onCopy={handleCopy}
-              />
+    "experiment_key": "signup-button-color",
+    "user_id": "visitor_abc"
+  }'`}
+                  id="step5-assign"
+                  copied={copied}
+                  onCopy={handleCopy}
+                />
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-3 mb-2 ml-10">Agdam Bagdam responds with which version to show:</p>
+              <div className="ml-10">
+                <AnnotatedBlock
+                  lines={[
+                    { code: '{' },
+                    { code: '  "variant": "green",', annotation: 'Show this visitor the green button', color: 'green' },
+                    { code: '  "experiment_key": "signup-button-color",', annotation: 'Which test this belongs to', color: 'slate' },
+                    { code: '  "user_id": "visitor_abc"', annotation: 'The visitor you asked about', color: 'slate' },
+                    { code: '}' },
+                  ]}
+                  id="step5-response"
+                  copied={copied}
+                  onCopy={handleCopy}
+                />
+              </div>
+              <div className="mt-3 ml-10">
+                <Callout type="info">
+                  The system randomly (but consistently) assigns each visitor. The same visitor always gets the same version, so they do not see the button change color between visits.
+                </Callout>
+              </div>
             </div>
 
-            {/* Step 3 */}
-            <div className="card p-5">
+            {/* Step 6: Track When Someone Clicks */}
+            <div className="card p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-6 h-6 rounded-full bg-primary-600 text-white text-xs font-bold flex items-center justify-center">3</div>
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Track conversion events</h3>
+                <div className="w-7 h-7 rounded-full bg-primary-600 text-white text-xs font-bold flex items-center justify-center">6</div>
+                <div className="flex items-center gap-2">
+                  <MousePointerClick className="w-4 h-4 text-orange-500" />
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">Track When Someone Clicks</h3>
+                </div>
               </div>
-              <CodeBlock
-                code={`curl -X POST ${BASE}/api/events \\
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 ml-10">
+                When a user clicks the signup button, tell Agdam Bagdam. This is how it counts conversions for each version.
+              </p>
+              <div className="ml-10">
+                <CodeBlock
+                  code={`curl -X POST ${BASE}/api/events \\
   -H "Content-Type: application/json" \\
   -H "x-api-key: YOUR_API_KEY" \\
   -H "x-project-id: YOUR_PROJECT_ID" \\
   -d '{
-    "event_name": "purchase",
-    "user_id": "user_123",
-    "properties": { "revenue": 49.99 }
+    "event_name": "signup_click",
+    "user_id": "visitor_abc"
   }'`}
-                id="qs-3"
-                copied={copied}
-                onCopy={handleCopy}
-              />
+                  id="step6-track"
+                  copied={copied}
+                  onCopy={handleCopy}
+                />
+              </div>
+              <div className="mt-3 ml-10">
+                <Callout type="warning">
+                  Use the same <strong>user_id</strong> you used in Step 5. That is how Agdam Bagdam connects the dots: &quot;visitor_abc saw the green button AND clicked signup.&quot;
+                </Callout>
+              </div>
+            </div>
+
+            {/* Step 7: Check Who's Winning */}
+            <div className="card p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-7 h-7 rounded-full bg-primary-600 text-white text-xs font-bold flex items-center justify-center">7</div>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-emerald-500" />
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">Check Who is Winning</h3>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 ml-10">
+                After enough people have visited, check the results. You will see this in the dashboard automatically, but you can also request it via API:
+              </p>
+              <div className="ml-10">
+                <CodeBlock
+                  code={`curl -X GET ${BASE}/api/experiments/EXPERIMENT_ID/results \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "x-project-id: YOUR_PROJECT_ID"`}
+                  id="step7-results-req"
+                  copied={copied}
+                  onCopy={handleCopy}
+                />
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-4 mb-2 ml-10">Here is what the results look like, with annotations explaining each number:</p>
+              <div className="ml-10">
+                <AnnotatedBlock
+                  lines={[
+                    { code: '{' },
+                    { code: '  "total_assignments": 10482,', annotation: '10,482 visitors entered this test', color: 'blue' },
+                    { code: '  "variants": [' },
+                    { code: '    {' },
+                    { code: '      "name": "blue",', annotation: 'The original button', color: 'slate' },
+                    { code: '      "assignments": 5241,', annotation: '5,241 people saw it', color: 'slate' },
+                    { code: '      "conversions": 312,', annotation: '312 clicked signup', color: 'slate' },
+                    { code: '      "conversion_rate": 0.0595', annotation: '5.95% click rate', color: 'amber' },
+                    { code: '    },' },
+                    { code: '    {' },
+                    { code: '      "name": "green",', annotation: 'The new button', color: 'slate' },
+                    { code: '      "assignments": 5241,', annotation: '5,241 people saw it', color: 'slate' },
+                    { code: '      "conversions": 387,', annotation: '387 clicked signup', color: 'slate' },
+                    { code: '      "conversion_rate": 0.0738', annotation: '7.38% click rate -- higher!', color: 'green' },
+                    { code: '    }' },
+                    { code: '  ],' },
+                    { code: '  "frequentist": {' },
+                    { code: '    "pValue": 0.0023,', annotation: 'Only 0.23% chance this is random luck', color: 'green' },
+                    { code: '    "significant": true,', annotation: 'You can trust this result!', color: 'green' },
+                    { code: '    "relativeUplift": 0.2403', annotation: 'Green is 24% better than blue', color: 'green' },
+                    { code: '  },' },
+                    { code: '  "bayesian": {' },
+                    { code: '    "probabilityOfBeingBest": {' },
+                    { code: '      "blue": 0.03,', annotation: '3% chance blue is better', color: 'amber' },
+                    { code: '      "green": 0.97', annotation: '97% chance green is better', color: 'green' },
+                    { code: '    }' },
+                    { code: '  },' },
+                    { code: '  "srmCheck": {' },
+                    { code: '    "passed": true', annotation: 'Traffic split is clean -- no data issues', color: 'green' },
+                    { code: '  },' },
+                    { code: '  "power": {' },
+                    { code: '    "current": 0.89', annotation: '89% power -- enough data to trust results', color: 'green' },
+                    { code: '  }' },
+                    { code: '}' },
+                  ]}
+                  id="step7-results-res"
+                  copied={copied}
+                  onCopy={handleCopy}
+                />
+              </div>
+              <div className="mt-4 ml-10">
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
+                  <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 mb-1">The verdict: Green wins!</p>
+                  <p className="text-sm text-emerald-700 dark:text-emerald-400">
+                    Green has a 97% probability of being the better button, with a 24% uplift in signups. Ship it.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
         {/* ================================================================
-            2. AUTHENTICATION
+            PAGE 2: ADDING TO YOUR WEBSITE
         ================================================================ */}
-        <section id="authentication">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-amber-50 dark:bg-amber-950 rounded-lg flex items-center justify-center">
-              <Key className="w-4 h-4 text-amber-600" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Authentication</h2>
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-            Every request requires two headers. Get your credentials from the <a href="/settings" className="text-primary-600 hover:underline">Settings</a> page.
-          </p>
-
-          <div className="card overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                  <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-slate-500">Header</th>
-                  <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-slate-500">Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-3"><code className="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">x-api-key</code></td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">Your API key. Authenticates the request.</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3"><code className="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">x-project-id</code></td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">Your project ID. Scopes all data to a specific project.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-4">
-            <CodeBlock
-              code={`# Every request looks like this:
-curl -X GET ${BASE}/api/experiments \\
-  -H "x-api-key: ab_live_xxxxxxxxxxxx" \\
-  -H "x-project-id: proj_xxxxxxxxxxxx"`}
-              id="auth-example"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-          </div>
-        </section>
-
-        {/* ================================================================
-            3. EXPERIMENTS API
-        ================================================================ */}
-        <section id="experiments">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-violet-50 dark:bg-violet-950 rounded-lg flex items-center justify-center">
-              <FlaskConical className="w-4 h-4 text-violet-600" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Experiments API</h2>
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">Create, manage, and analyze A/B tests.</p>
-
-          <div className="space-y-4">
-            <Endpoint
-              method="POST"
-              path="/api/experiments"
-              description="Create a new experiment. Returns the created experiment object."
-              reqBody={`{
-  "name": "Checkout Button Color",
-  "key": "checkout_btn_color",
-  "description": "Test green vs default button on checkout",
-  "variants": [
-    { "name": "control", "weight": 50 },
-    { "name": "green_button", "weight": 50 }
-  ],
-  "targeting_rules": {
-    "percentage": 100
-  }
-}`}
-              resBody={`{
-  "id": "exp_abc123",
-  "name": "Checkout Button Color",
-  "key": "checkout_btn_color",
-  "status": "draft",
-  "variants": [
-    { "id": "var_1", "name": "control", "weight": 50 },
-    { "id": "var_2", "name": "green_button", "weight": 50 }
-  ],
-  "created_at": "2025-01-15T10:30:00Z"
-}`}
-              id="exp-create"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-
-            <Endpoint
-              method="GET"
-              path="/api/experiments"
-              description="List all experiments. Supports optional query params: ?status=running&limit=20&offset=0"
-              resBody={`{
-  "experiments": [
-    {
-      "id": "exp_abc123",
-      "name": "Checkout Button Color",
-      "key": "checkout_btn_color",
-      "status": "running",
-      "created_at": "2025-01-15T10:30:00Z"
-    }
-  ],
-  "total": 1
-}`}
-              id="exp-list"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-
-            <Endpoint
-              method="GET"
-              path="/api/experiments/:id"
-              description="Get full experiment details, including variants and targeting rules."
-              resBody={`{
-  "id": "exp_abc123",
-  "name": "Checkout Button Color",
-  "key": "checkout_btn_color",
-  "status": "running",
-  "variants": [ ... ],
-  "targeting_rules": { "percentage": 100 },
-  "created_at": "2025-01-15T10:30:00Z",
-  "started_at": "2025-01-16T08:00:00Z"
-}`}
-              id="exp-detail"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-
-            <Endpoint
-              method="POST"
-              path="/api/experiments/:id/start"
-              description="Start an experiment. Moves from draft to running. Assignment begins immediately."
-              resBody={`{
-  "id": "exp_abc123",
-  "status": "running",
-  "started_at": "2025-01-16T08:00:00Z"
-}`}
-              id="exp-start"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-
-            <Endpoint
-              method="POST"
-              path="/api/experiments/:id/pause"
-              description="Pause a running experiment. Existing assignments are preserved; no new users are assigned."
-              resBody={`{
-  "id": "exp_abc123",
-  "status": "paused"
-}`}
-              id="exp-pause"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-
-            <Endpoint
-              method="POST"
-              path="/api/experiments/:id/complete"
-              description="Complete an experiment. Locks results. This action is irreversible."
-              resBody={`{
-  "id": "exp_abc123",
-  "status": "completed",
-  "completed_at": "2025-02-01T12:00:00Z"
-}`}
-              id="exp-complete"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-
-            <Endpoint
-              method="GET"
-              path="/api/experiments/:id/results"
-              description="Get statistical results for a running or completed experiment. Includes both frequentist and Bayesian analysis."
-              resBody={`{
-  "experiment_id": "exp_abc123",
-  "status": "running",
-  "total_assignments": 10482,
-  "variants": [
-    {
-      "name": "control",
-      "assignments": 5241,
-      "conversions": 312,
-      "conversion_rate": 0.0595,
-      "revenue_per_user": 2.87
-    },
-    {
-      "name": "green_button",
-      "assignments": 5241,
-      "conversions": 387,
-      "conversion_rate": 0.0738,
-      "revenue_per_user": 3.42
-    }
-  ],
-  "frequentist": {
-    "pValue": 0.0023,
-    "confidenceInterval": [0.0041, 0.0245],
-    "significant": true,
-    "relativeUplift": 0.2403
-  },
-  "bayesian": {
-    "probabilityOfBeingBest": {
-      "control": 0.03,
-      "green_button": 0.97
-    },
-    "expectedLoss": {
-      "control": 0.0138,
-      "green_button": 0.0002
-    },
-    "credibleInterval": [0.0035, 0.0251]
-  },
-  "srmCheck": {
-    "passed": true,
-    "pValue": 0.98,
-    "expectedRatio": [0.5, 0.5],
-    "observedRatio": [0.5, 0.5]
-  },
-  "power": {
-    "current": 0.89,
-    "requiredSampleSize": 12000,
-    "estimatedDaysRemaining": 3
-  }
-}`}
-              id="exp-results"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-          </div>
-        </section>
-
-        {/* ================================================================
-            4. ASSIGNMENT API
-        ================================================================ */}
-        <section id="assignment">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-cyan-50 dark:bg-cyan-950 rounded-lg flex items-center justify-center">
-              <Users className="w-4 h-4 text-cyan-600" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Assignment API</h2>
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-            Deterministically assign users to experiment variants using MurmurHash3. Same user always gets the same variant.
-          </p>
-
-          <div className="space-y-4">
-            <Endpoint
-              method="POST"
-              path="/api/assign"
-              description="Get a variant assignment for a single user. Assignment is deterministic and sticky."
-              reqBody={`{
-  "experiment_key": "checkout_btn_color",
-  "user_id": "user_123",
-  "attributes": {
-    "country": "US",
-    "plan": "pro"
-  }
-}`}
-              resBody={`{
-  "variant": "green_button",
-  "experiment_key": "checkout_btn_color",
-  "user_id": "user_123"
-}`}
-              id="assign-single"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-
-            <Endpoint
-              method="POST"
-              path="/api/assign/bulk"
-              description="Get assignments for multiple experiments at once. Useful on page load to fetch all active experiments."
-              reqBody={`{
-  "user_id": "user_123",
-  "experiment_keys": [
-    "checkout_btn_color",
-    "pricing_page_layout",
-    "onboarding_flow"
-  ],
-  "attributes": {
-    "country": "US"
-  }
-}`}
-              resBody={`{
-  "assignments": {
-    "checkout_btn_color": "green_button",
-    "pricing_page_layout": "control",
-    "onboarding_flow": "streamlined"
-  },
-  "user_id": "user_123"
-}`}
-              id="assign-bulk"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-          </div>
-        </section>
-
-        {/* ================================================================
-            5. EVENTS API
-        ================================================================ */}
-        <section id="events">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-rose-50 dark:bg-rose-950 rounded-lg flex items-center justify-center">
-              <Activity className="w-4 h-4 text-rose-600" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Events API</h2>
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-            Track conversion events and custom metrics. Events are automatically associated with active experiment assignments.
-          </p>
-
-          <div className="space-y-4">
-            <Endpoint
-              method="POST"
-              path="/api/events"
-              description="Track a single event for a user."
-              reqBody={`{
-  "event_name": "purchase",
-  "user_id": "user_123",
-  "value": 49.99,
-  "properties": {
-    "currency": "USD",
-    "item_count": 3
-  }
-}`}
-              resBody={`{
-  "success": true,
-  "event_id": "evt_xyz789"
-}`}
-              id="events-single"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-
-            <Endpoint
-              method="POST"
-              path="/api/events/batch"
-              description="Track multiple events in a single request. Recommended for high-throughput scenarios. Max 100 events per batch."
-              reqBody={`{
-  "events": [
-    {
-      "event_name": "page_view",
-      "user_id": "user_123",
-      "properties": { "page": "/checkout" },
-      "timestamp": "2025-01-16T08:12:00Z"
-    },
-    {
-      "event_name": "purchase",
-      "user_id": "user_123",
-      "value": 49.99,
-      "timestamp": "2025-01-16T08:14:30Z"
-    }
-  ]
-}`}
-              resBody={`{
-  "success": true,
-  "processed": 2,
-  "failed": 0
-}`}
-              id="events-batch"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-          </div>
-        </section>
-
-        {/* ================================================================
-            6. FEATURE FLAGS API
-        ================================================================ */}
-        <section id="flags">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-orange-50 dark:bg-orange-950 rounded-lg flex items-center justify-center">
-              <Flag className="w-4 h-4 text-orange-600" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Feature Flags API</h2>
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-            Ship features behind flags. Instant rollbacks. Gradual rollouts. Targeted releases.
-          </p>
-
-          <div className="space-y-4">
-            <Endpoint
-              method="POST"
-              path="/api/flags"
-              description="Create a new feature flag."
-              reqBody={`{
-  "name": "Dark Mode",
-  "key": "dark_mode",
-  "description": "Enable dark mode for users",
-  "enabled": false,
-  "targeting_rules": {
-    "percentage": 0,
-    "attributes": {
-      "plan": ["pro", "enterprise"]
-    }
-  }
-}`}
-              resBody={`{
-  "id": "flag_abc123",
-  "key": "dark_mode",
-  "name": "Dark Mode",
-  "enabled": false,
-  "created_at": "2025-01-15T10:30:00Z"
-}`}
-              id="flags-create"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-
-            <Endpoint
-              method="GET"
-              path="/api/flags"
-              description="List all feature flags."
-              resBody={`{
-  "flags": [
-    {
-      "id": "flag_abc123",
-      "key": "dark_mode",
-      "name": "Dark Mode",
-      "enabled": false,
-      "created_at": "2025-01-15T10:30:00Z"
-    }
-  ],
-  "total": 1
-}`}
-              id="flags-list"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-
-            <Endpoint
-              method="POST"
-              path="/api/flags/:id/toggle"
-              description="Toggle a feature flag on or off."
-              reqBody={`{
-  "enabled": true
-}`}
-              resBody={`{
-  "id": "flag_abc123",
-  "key": "dark_mode",
-  "enabled": true
-}`}
-              id="flags-toggle"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-
-            <Endpoint
-              method="POST"
-              path="/api/flags/evaluate"
-              description="Evaluate a feature flag for a specific user. Returns whether the flag is active given the user's attributes."
-              reqBody={`{
-  "flag_key": "dark_mode",
-  "user_id": "user_123",
-  "attributes": {
-    "plan": "pro",
-    "country": "US"
-  }
-}`}
-              resBody={`{
-  "flag_key": "dark_mode",
-  "enabled": true,
-  "user_id": "user_123",
-  "reason": "targeting_match"
-}`}
-              id="flags-evaluate"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-          </div>
-        </section>
-
-        {/* ================================================================
-            7. METRICS API
-        ================================================================ */}
-        <section id="metrics">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-teal-50 dark:bg-teal-950 rounded-lg flex items-center justify-center">
-              <Target className="w-4 h-4 text-teal-600" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Metrics API</h2>
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-            Define the metrics that matter. Attach them to experiments to measure impact.
-          </p>
-
-          <div className="space-y-4">
-            <Endpoint
-              method="POST"
-              path="/api/metrics"
-              description="Create a new metric definition."
-              reqBody={`{
-  "name": "Revenue per User",
-  "key": "revenue_per_user",
-  "type": "revenue",
-  "event_name": "purchase",
-  "aggregation": "sum",
-  "unit": "USD"
-}`}
-              resBody={`{
-  "id": "met_abc123",
-  "name": "Revenue per User",
-  "key": "revenue_per_user",
-  "type": "revenue",
-  "created_at": "2025-01-15T10:30:00Z"
-}`}
-              id="metrics-create"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-
-            <Endpoint
-              method="GET"
-              path="/api/metrics"
-              description="List all metric definitions."
-              resBody={`{
-  "metrics": [
-    {
-      "id": "met_abc123",
-      "name": "Revenue per User",
-      "key": "revenue_per_user",
-      "type": "revenue"
-    },
-    {
-      "id": "met_def456",
-      "name": "Conversion Rate",
-      "key": "conversion_rate",
-      "type": "conversion"
-    }
-  ],
-  "total": 2
-}`}
-              id="metrics-list"
-              copied={copied}
-              onCopy={handleCopy}
-            />
-          </div>
-        </section>
-
-        {/* ================================================================
-            8. SDK INTEGRATION
-        ================================================================ */}
-        <section id="sdk">
-          <div className="flex items-center gap-3 mb-4">
+        <section id="add-to-site">
+          <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 bg-indigo-50 dark:bg-indigo-950 rounded-lg flex items-center justify-center">
               <Code className="w-4 h-4 text-indigo-600" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">SDK Integration</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Adding to Your Website</h2>
           </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-            Drop-in SDKs for the most common environments. All SDKs handle caching, batching, and offline evaluation.
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-8 ml-11">
+            Pick the method that matches your tech stack. Each example shows the complete flow: connect, get a variant, show it, and track clicks.
           </p>
 
           <div className="card overflow-hidden">
             {/* Language tabs */}
             <div className="flex overflow-x-auto border-b border-slate-200 dark:border-slate-800 px-4">
               {([
-                { key: 'browser' as const, label: 'Browser (Script Tag)' },
-                { key: 'react' as const, label: 'React (Hook)' },
+                { key: 'html' as const, label: 'Plain HTML' },
+                { key: 'react' as const, label: 'React' },
                 { key: 'node' as const, label: 'Node.js (Server)' },
                 { key: 'curl' as const, label: 'cURL (Any Language)' },
               ]).map(({ key, label }) => (
@@ -851,239 +617,727 @@ curl -X GET ${BASE}/api/experiments \\
             </div>
 
             <div className="relative">
-              {activeSDK === 'browser' && (
-                <CodeBlock
-                  code={`<!-- Add to your HTML -->
+              {activeSDK === 'html' && (
+                <div>
+                  <div className="px-4 pt-4">
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">The simplest approach. Add this to any HTML page -- no build tools needed.</p>
+                  </div>
+                  <CodeBlock
+                    code={`<!-- Drop this into your HTML page -->
 <script src="https://unpkg.com/@abacus/sdk-js/dist/abacus.min.js"></script>
 <script>
-  const abacus = new Abacus.Client({
+  // 1. Connect to your Agdam Bagdam server
+  var ab = new Abacus.Client({
     apiKey: 'YOUR_API_KEY',
     apiUrl: '${BASE}',
   });
 
-  // Get variant assignment (deterministic, cached locally)
-  const variant = abacus.getVariant('checkout_btn_color', 'user_123');
+  // 2. Find out which version this visitor should see
+  //    (uses a cookie or local storage to keep it consistent)
+  var variant = ab.getVariant('signup-button-color', 'visitor_abc');
 
-  if (variant === 'green_button') {
-    document.getElementById('cta').style.backgroundColor = '#22c55e';
+  // 3. Show the right version
+  if (variant === 'green') {
+    document.getElementById('signup-btn').style.backgroundColor = '#22c55e';
   }
+  // If variant is 'blue', do nothing -- blue is the default
 
-  // Track conversions (batched, uses sendBeacon on page unload)
-  document.getElementById('cta').addEventListener('click', () => {
-    abacus.track('purchase', 'user_123', { revenue: 49.99 });
+  // 4. Track when they click the button
+  document.getElementById('signup-btn').addEventListener('click', function() {
+    ab.track('signup_click', 'visitor_abc');
   });
 </script>`}
-                  id="sdk-browser"
-                  copied={copied}
-                  onCopy={handleCopy}
-                />
+                    id="sdk-html"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                </div>
               )}
               {activeSDK === 'react' && (
-                <CodeBlock
-                  code={`import { AbacusProvider, useExperiment, useTrack } from '@abacus/sdk-js/react';
+                <div>
+                  <div className="px-4 pt-4">
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Use the React hook for seamless integration with React apps.</p>
+                  </div>
+                  <CodeBlock
+                    code={`import { AbacusProvider, useExperiment, useTrack } from '@abacus/sdk-js/react';
 
-// Wrap your app
+// Step 1: Wrap your app with the provider (do this once, at the top level)
 function App() {
   return (
-    <AbacusProvider apiKey="YOUR_API_KEY" apiUrl="${BASE}" userId={userId}>
-      <Checkout />
+    <AbacusProvider
+      apiKey="YOUR_API_KEY"
+      apiUrl="${BASE}"
+      userId={currentUser.id}  // Your logged-in user's ID
+    >
+      <SignupPage />
     </AbacusProvider>
   );
 }
 
-// Use in any component
-function Checkout() {
-  const { variant, loading } = useExperiment('checkout_btn_color');
+// Step 2: Use the hook in any component
+function SignupPage() {
+  // This tells you which variant to show
+  const { variant, loading } = useExperiment('signup-button-color');
+
+  // This gives you a function to track events
   const track = useTrack();
 
-  if (loading) return <Skeleton />;
+  if (loading) return <div>Loading...</div>;
 
   return (
     <button
-      onClick={() => track('purchase', { revenue: 49.99 })}
-      className={variant === 'green_button' ? 'bg-green-500' : 'bg-blue-500'}
+      onClick={() => track('signup_click')}
+      style={{ backgroundColor: variant === 'green' ? '#22c55e' : '#3b82f6' }}
     >
-      Buy Now
+      Sign Up Free
     </button>
   );
 }`}
-                  id="sdk-react"
-                  copied={copied}
-                  onCopy={handleCopy}
-                />
+                    id="sdk-react"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                </div>
               )}
               {activeSDK === 'node' && (
-                <CodeBlock
-                  code={`const { AbacusClient } = require('@abacus/sdk-node');
+                <div>
+                  <div className="px-4 pt-4">
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">For server-rendered apps (Express, Next.js, etc). The variant is decided before the page loads.</p>
+                  </div>
+                  <CodeBlock
+                    code={`const { AbacusClient } = require('@abacus/sdk-node');
 
-const abacus = new AbacusClient({
+// Step 1: Create a client (do this once when your server starts)
+const ab = new AbacusClient({
   apiKey: 'YOUR_API_KEY',
   apiUrl: '${BASE}',
 });
 
-// Server-side assignment (deterministic, no network call needed)
-app.get('/checkout', async (req, res) => {
-  const variant = await abacus.getVariant(
-    'checkout_btn_color',
-    req.session.userId
+// Step 2: Get the variant when a user requests the page
+app.get('/signup', async (req, res) => {
+  const variant = await ab.getVariant(
+    'signup-button-color',   // Your experiment key
+    req.session.userId       // The visitor's unique ID
   );
 
-  res.render(variant === 'green_button' ? 'checkout-v2' : 'checkout');
+  // Step 3: Render the right version
+  res.render('signup', { buttonColor: variant });
 });
 
-// Track server-side events
-app.post('/purchase', async (req, res) => {
-  await abacus.track('purchase', req.session.userId, {
-    revenue: req.body.total,
-  });
+// Step 4: Track events when something happens
+app.post('/signup-click', async (req, res) => {
+  await ab.track('signup_click', req.session.userId);
   res.json({ success: true });
 });`}
-                  id="sdk-node"
-                  copied={copied}
-                  onCopy={handleCopy}
-                />
+                    id="sdk-node"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                </div>
               )}
               {activeSDK === 'curl' && (
-                <CodeBlock
-                  code={`# Works from any language that can make HTTP calls.
-# Replace YOUR_API_KEY and YOUR_PROJECT_ID.
-
-# 1. Get variant assignment
+                <div>
+                  <div className="px-4 pt-4">
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Works from any language that can make HTTP calls. Python, Ruby, Go, PHP -- anything.</p>
+                  </div>
+                  <CodeBlock
+                    code={`# Step 1: Ask which version to show this visitor
 curl -X POST ${BASE}/api/assign \\
   -H "Content-Type: application/json" \\
   -H "x-api-key: YOUR_API_KEY" \\
   -H "x-project-id: YOUR_PROJECT_ID" \\
-  -d '{"experiment_key": "checkout_btn_color", "user_id": "user_123"}'
+  -d '{"experiment_key": "signup-button-color", "user_id": "visitor_abc"}'
 
-# 2. Track event
+# Response: {"variant": "green", ...}
+# Use that value to render the right version in your app.
+
+# Step 2: When the user clicks, track it
 curl -X POST ${BASE}/api/events \\
   -H "Content-Type: application/json" \\
   -H "x-api-key: YOUR_API_KEY" \\
   -H "x-project-id: YOUR_PROJECT_ID" \\
-  -d '{"event_name": "purchase", "user_id": "user_123", "value": 49.99}'
-
-# 3. Get results
-curl -X GET ${BASE}/api/experiments/exp_abc123/results \\
-  -H "x-api-key: YOUR_API_KEY" \\
-  -H "x-project-id: YOUR_PROJECT_ID"`}
-                  id="sdk-curl"
-                  copied={copied}
-                  onCopy={handleCopy}
-                />
+  -d '{"event_name": "signup_click", "user_id": "visitor_abc"}'`}
+                    id="sdk-curl"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                </div>
               )}
             </div>
           </div>
         </section>
 
         {/* ================================================================
-            9. UNDERSTANDING RESULTS
+            PAGE 3: UNDERSTANDING YOUR RESULTS
         ================================================================ */}
-        <section id="results">
-          <div className="flex items-center gap-3 mb-4">
+        <section id="understanding-results">
+          <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 bg-emerald-50 dark:bg-emerald-950 rounded-lg flex items-center justify-center">
               <BarChart3 className="w-4 h-4 text-emerald-600" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Understanding Results</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Understanding Your Results</h2>
           </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-            What each field in the results response actually means and when to act on it.
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-8 ml-11">
+            Your test is running and data is coming in. Here is how to read the numbers -- in plain English.
           </p>
 
-          <div className="space-y-4">
-            {/* frequentist.pValue */}
-            <div className="card p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <code className="text-sm font-mono font-semibold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">frequentist.pValue</code>
+          <div className="space-y-6">
+            {/* Is my test working? */}
+            <div className="card p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <Shield className="w-5 h-5 text-red-500" />
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">&quot;Is my test working?&quot;</h3>
+                <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded">Check: SRM</span>
               </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                The probability of seeing a difference this large (or larger) if there were <em>no real difference</em> between variants. A lower p-value means stronger evidence.
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                If Agdam Bagdam says <strong>&quot;SRM Warning&quot;</strong> (or <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs">srmCheck.passed: false</code>), it means something is wrong with how visitors are being split between versions. Think of it like a coin that lands heads 70% of the time -- that coin is broken.
               </p>
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 space-y-2">
-                <div className="flex items-start gap-2">
-                  <ChevronRight className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>p &lt; 0.05</strong> -- Statistically significant. Safe to call a winner.</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <ChevronRight className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>p = 0.05 - 0.10</strong> -- Directional signal. Consider running longer.</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <ChevronRight className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>p &gt; 0.10</strong> -- No meaningful difference detected yet.</span>
-                </div>
-              </div>
-            </div>
-
-            {/* bayesian.probabilityOfBeingBest */}
-            <div className="card p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <code className="text-sm font-mono font-semibold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">bayesian.probabilityOfBeingBest</code>
-              </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                The estimated probability that each variant is the best performer. Easier to interpret than p-values -- it directly answers &quot;which variant should I pick?&quot;
-              </p>
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 space-y-2">
-                <div className="flex items-start gap-2">
-                  <ChevronRight className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>&gt; 95%</strong> -- High confidence. Ship the winner.</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <ChevronRight className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>80% - 95%</strong> -- Likely winner, but consider the expected loss before deciding.</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <ChevronRight className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>&lt; 80%</strong> -- Too close to call. Keep collecting data.</span>
-                </div>
-              </div>
-            </div>
-
-            {/* srmCheck */}
-            <div className="card p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <code className="text-sm font-mono font-semibold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">srmCheck</code>
-              </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                Sample Ratio Mismatch detection. Checks whether each variant received the expected proportion of traffic. If this fails, your experiment has a data quality issue and <strong>results cannot be trusted</strong>.
-              </p>
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 space-y-2">
+              <Callout type="warning">
+                If SRM fails, <strong>do not trust the results</strong>. Common causes: bot traffic hitting one version more, a bug in your code that only loads one variant, or redirects dropping users. Fix your setup first, then restart the test.
+              </Callout>
+              <div className="mt-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 space-y-2">
                 <div className="flex items-start gap-2">
                   <Check className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>passed: true</strong> -- Traffic split is clean. Results are trustworthy.</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>passed: true</strong> -- Traffic split is clean. Your test is set up correctly.</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <AlertIcon />
-                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>passed: false</strong> -- Something is wrong. Common causes: bot traffic, broken assignment logic, redirects dropping users from one variant. Investigate before drawing conclusions.</span>
+                  <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>passed: false</strong> -- Something is broken. Investigate before drawing any conclusions.</span>
                 </div>
               </div>
             </div>
 
-            {/* power */}
-            <div className="card p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <code className="text-sm font-mono font-semibold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">power</code>
+            {/* Who's winning? */}
+            <div className="card p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <TrendingUp className="w-5 h-5 text-emerald-500" />
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">&quot;Who is winning?&quot;</h3>
+                <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded">Check: probabilityOfBeingBest</span>
               </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                Statistical power tells you whether your experiment has enough data to detect a real effect if one exists. Low power means you might miss a real winner.
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                This number tells you the chance that each version is genuinely the best -- not just ahead due to luck. If green shows <strong>95%</strong>, that means there is a 95% chance green is truly better. Agdam Bagdam calculates this using Bayesian statistics (you do not need to know what that means).
               </p>
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 space-y-2">
                 <div className="flex items-start gap-2">
                   <ChevronRight className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>current &gt; 0.8</strong> -- Enough data. If the test is not significant, the effect is likely very small.</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>Above 95%</strong> -- You have a clear winner. Ship it with confidence.</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <ChevronRight className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>current &lt; 0.8</strong> -- Under-powered. Check <code className="bg-slate-200 dark:bg-slate-700 px-1 rounded text-xs">requiredSampleSize</code> and <code className="bg-slate-200 dark:bg-slate-700 px-1 rounded text-xs">estimatedDaysRemaining</code> to plan.</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>80% - 95%</strong> -- Leaning one way, but you might want more data to be safe.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <ChevronRight className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>Below 80%</strong> -- Too close to call. Keep the test running.</span>
                 </div>
               </div>
             </div>
+
+            {/* Can I trust this? */}
+            <div className="card p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <Check className="w-5 h-5 text-blue-500" />
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">&quot;Can I trust this?&quot;</h3>
+                <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded">Check: pValue and significant</span>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                The p-value answers: &quot;What is the probability that what I am seeing is just random chance?&quot; <strong>Lower is better.</strong> When it drops below 0.05 (5%), Agdam Bagdam marks the result as <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs">significant: true</code> -- meaning you can trust it.
+              </p>
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 space-y-2">
+                <div className="flex items-start gap-2">
+                  <ChevronRight className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>p &lt; 0.05</strong> -- Statistically significant. Less than 5% chance this is luck.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <ChevronRight className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>p = 0.05 - 0.10</strong> -- Getting there, but not enough yet. Keep the test running.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <ChevronRight className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>p &gt; 0.10</strong> -- No meaningful difference detected. Need more data or the effect is very small.</span>
+                </div>
+              </div>
+              <div className="mt-3">
+                <Callout type="info">
+                  Think of p-value and probabilityOfBeingBest as two lenses on the same question. If both agree, you can be very confident. Most people find probabilityOfBeingBest easier to understand.
+                </Callout>
+              </div>
+            </div>
+
+            {/* Do I have enough data? */}
+            <div className="card p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <Gauge className="w-5 h-5 text-amber-500" />
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">&quot;Do I have enough data?&quot;</h3>
+                <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded">Check: power</span>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                Power tells you whether you have seen enough visitors to detect a real difference. Think of it like trying to hear a whisper in a crowded room -- you need enough quiet (data) to hear it.
+              </p>
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 space-y-2">
+                <div className="flex items-start gap-2">
+                  <ChevronRight className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>Above 80%</strong> -- You have enough data. If the test is not significant at this point, the real difference is probably very small.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <ChevronRight className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>Below 80%</strong> -- Keep waiting. Check <code className="bg-slate-200 dark:bg-slate-700 px-1 rounded text-xs">requiredSampleSize</code> and <code className="bg-slate-200 dark:bg-slate-700 px-1 rounded text-xs">estimatedDaysRemaining</code> to see how long.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Should I stop early? */}
+            <div className="card p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <StopCircle className="w-5 h-5 text-violet-500" />
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">&quot;Should I stop early?&quot;</h3>
+                <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded">Check: sequential testing</span>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                Sometimes one version is SO much better that you do not need to wait for the full test to finish. Agdam Bagdam uses sequential testing to check for early winners safely (without increasing the chance of a false positive).
+              </p>
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 space-y-2">
+                <div className="flex items-start gap-2">
+                  <ChevronRight className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>shouldStop: true</strong> -- There is a clear winner. You can end the test and ship.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <ChevronRight className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300"><strong>shouldStop: false</strong> -- Not enough evidence yet for an early call. Let it run.</span>
+                </div>
+              </div>
+              <div className="mt-3">
+                <Callout type="tip">
+                  When in doubt, let the test run until power reaches 80%+. Stopping too early is one of the most common mistakes in A/B testing.
+                </Callout>
+              </div>
+            </div>
+
+            {/* Quick reference summary */}
+            <div className="card overflow-hidden">
+              <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-slate-500" />
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Quick Decision Guide</h4>
+                </div>
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-slate-500">You want to know</th>
+                    <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-slate-500">Look at</th>
+                    <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-slate-500">Good result</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-600 dark:text-slate-400">
+                  <tr className="border-b border-slate-100 dark:border-slate-800">
+                    <td className="px-4 py-3">Is the test set up correctly?</td>
+                    <td className="px-4 py-3"><code className="text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">srmCheck.passed</code></td>
+                    <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-medium">true</td>
+                  </tr>
+                  <tr className="border-b border-slate-100 dark:border-slate-800">
+                    <td className="px-4 py-3">Which version is better?</td>
+                    <td className="px-4 py-3"><code className="text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">probabilityOfBeingBest</code></td>
+                    <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-medium">&gt; 95%</td>
+                  </tr>
+                  <tr className="border-b border-slate-100 dark:border-slate-800">
+                    <td className="px-4 py-3">Can I trust it?</td>
+                    <td className="px-4 py-3"><code className="text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">significant</code></td>
+                    <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-medium">true</td>
+                  </tr>
+                  <tr className="border-b border-slate-100 dark:border-slate-800">
+                    <td className="px-4 py-3">Enough data?</td>
+                    <td className="px-4 py-3"><code className="text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">power.current</code></td>
+                    <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-medium">&gt; 0.80</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3">Can I stop early?</td>
+                    <td className="px-4 py-3"><code className="text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">shouldStop</code></td>
+                    <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-medium">true</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
+        </section>
+
+        {/* ================================================================
+            PAGE 4: FULL API REFERENCE
+        ================================================================ */}
+        <section id="api-reference">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Full API Reference</h2>
+          </div>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 ml-11">
+            Every endpoint Agdam Bagdam offers, with request and response formats. This section is for developers who want the complete spec.
+          </p>
+
+          <div className="ml-11 mb-6">
+            <button
+              onClick={() => setShowFullRef(!showFullRef)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors"
+            >
+              {showFullRef ? 'Hide' : 'Show'} Full API Reference
+              <ChevronRight className={`w-4 h-4 transition-transform ${showFullRef ? 'rotate-90' : ''}`} />
+            </button>
+          </div>
+
+          {showFullRef && (
+            <div className="space-y-10">
+              {/* Authentication reminder */}
+              <div className="ml-11">
+                <Callout type="info">
+                  Every request requires two headers: <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded text-xs">x-api-key</code> (your API key) and <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded text-xs">x-project-id</code> (your project ID). Get both from <a href="/settings" className="font-medium underline">Settings</a>.
+                </Callout>
+              </div>
+
+              {/* Experiments */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                  <FlaskConical className="w-4 h-4 text-violet-500" />
+                  Experiments
+                </h3>
+                <div className="space-y-4">
+                  <Endpoint
+                    method="POST"
+                    path="/api/experiments"
+                    description="Create a new experiment."
+                    reqBody={`{
+  "name": "Signup Button Color",
+  "key": "signup-button-color",
+  "description": "Test green vs blue button on signup",
+  "variants": [
+    { "name": "blue", "weight": 50 },
+    { "name": "green", "weight": 50 }
+  ],
+  "targeting_rules": { "percentage": 100 }
+}`}
+                    resBody={`{
+  "id": "exp_abc123",
+  "name": "Signup Button Color",
+  "key": "signup-button-color",
+  "status": "draft",
+  "variants": [
+    { "id": "var_1", "name": "blue", "weight": 50 },
+    { "id": "var_2", "name": "green", "weight": 50 }
+  ],
+  "created_at": "2025-01-15T10:30:00Z"
+}`}
+                    id="ref-exp-create"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                  <Endpoint
+                    method="GET"
+                    path="/api/experiments"
+                    description="List all experiments. Supports optional query params: ?status=running&limit=20&offset=0"
+                    resBody={`{
+  "experiments": [
+    {
+      "id": "exp_abc123",
+      "name": "Signup Button Color",
+      "key": "signup-button-color",
+      "status": "running",
+      "created_at": "2025-01-15T10:30:00Z"
+    }
+  ],
+  "total": 1
+}`}
+                    id="ref-exp-list"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                  <Endpoint
+                    method="GET"
+                    path="/api/experiments/:id"
+                    description="Get full experiment details including variants and targeting rules."
+                    resBody={`{
+  "id": "exp_abc123",
+  "name": "Signup Button Color",
+  "key": "signup-button-color",
+  "status": "running",
+  "variants": [ ... ],
+  "targeting_rules": { "percentage": 100 },
+  "created_at": "2025-01-15T10:30:00Z",
+  "started_at": "2025-01-16T08:00:00Z"
+}`}
+                    id="ref-exp-detail"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                  <Endpoint method="POST" path="/api/experiments/:id/start" description="Start an experiment. Moves it from draft to running. Users start being assigned immediately." resBody={`{ "id": "exp_abc123", "status": "running", "started_at": "2025-01-16T08:00:00Z" }`} id="ref-exp-start" copied={copied} onCopy={handleCopy} />
+                  <Endpoint method="POST" path="/api/experiments/:id/pause" description="Pause a running experiment. Existing assignments are kept, but no new users are assigned." resBody={`{ "id": "exp_abc123", "status": "paused" }`} id="ref-exp-pause" copied={copied} onCopy={handleCopy} />
+                  <Endpoint method="POST" path="/api/experiments/:id/complete" description="Mark an experiment as complete. This locks the results. Irreversible." resBody={`{ "id": "exp_abc123", "status": "completed", "completed_at": "2025-02-01T12:00:00Z" }`} id="ref-exp-complete" copied={copied} onCopy={handleCopy} />
+                  <Endpoint
+                    method="GET"
+                    path="/api/experiments/:id/results"
+                    description="Get statistical results for a running or completed experiment. Includes frequentist, Bayesian, SRM, and power analysis."
+                    resBody={`{
+  "experiment_id": "exp_abc123",
+  "status": "running",
+  "total_assignments": 10482,
+  "variants": [
+    {
+      "name": "blue",
+      "assignments": 5241,
+      "conversions": 312,
+      "conversion_rate": 0.0595,
+      "revenue_per_user": 2.87
+    },
+    {
+      "name": "green",
+      "assignments": 5241,
+      "conversions": 387,
+      "conversion_rate": 0.0738,
+      "revenue_per_user": 3.42
+    }
+  ],
+  "frequentist": {
+    "pValue": 0.0023,
+    "confidenceInterval": [0.0041, 0.0245],
+    "significant": true,
+    "relativeUplift": 0.2403
+  },
+  "bayesian": {
+    "probabilityOfBeingBest": { "blue": 0.03, "green": 0.97 },
+    "expectedLoss": { "blue": 0.0138, "green": 0.0002 },
+    "credibleInterval": [0.0035, 0.0251]
+  },
+  "srmCheck": {
+    "passed": true,
+    "pValue": 0.98,
+    "expectedRatio": [0.5, 0.5],
+    "observedRatio": [0.5, 0.5]
+  },
+  "power": {
+    "current": 0.89,
+    "requiredSampleSize": 12000,
+    "estimatedDaysRemaining": 3
+  }
+}`}
+                    id="ref-exp-results"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                </div>
+              </div>
+
+              {/* Assignment */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-cyan-500" />
+                  Assignment
+                </h3>
+                <div className="space-y-4">
+                  <Endpoint
+                    method="POST"
+                    path="/api/assign"
+                    description="Get a variant assignment for a single user. Deterministic -- the same user always gets the same variant."
+                    reqBody={`{
+  "experiment_key": "signup-button-color",
+  "user_id": "visitor_abc",
+  "attributes": { "country": "US", "plan": "pro" }
+}`}
+                    resBody={`{
+  "variant": "green",
+  "experiment_key": "signup-button-color",
+  "user_id": "visitor_abc"
+}`}
+                    id="ref-assign-single"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                  <Endpoint
+                    method="POST"
+                    path="/api/assign/bulk"
+                    description="Get assignments for multiple experiments at once. Useful on page load."
+                    reqBody={`{
+  "user_id": "visitor_abc",
+  "experiment_keys": [
+    "signup-button-color",
+    "pricing-page-layout",
+    "onboarding-flow"
+  ],
+  "attributes": { "country": "US" }
+}`}
+                    resBody={`{
+  "assignments": {
+    "signup-button-color": "green",
+    "pricing-page-layout": "control",
+    "onboarding-flow": "streamlined"
+  },
+  "user_id": "visitor_abc"
+}`}
+                    id="ref-assign-bulk"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                </div>
+              </div>
+
+              {/* Events */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                  <MousePointerClick className="w-4 h-4 text-orange-500" />
+                  Events
+                </h3>
+                <div className="space-y-4">
+                  <Endpoint
+                    method="POST"
+                    path="/api/events"
+                    description="Track a single event. Automatically associated with any active experiment the user is in."
+                    reqBody={`{
+  "event_name": "signup_click",
+  "user_id": "visitor_abc",
+  "value": 49.99,
+  "properties": { "currency": "USD", "item_count": 3 }
+}`}
+                    resBody={`{ "success": true, "event_id": "evt_xyz789" }`}
+                    id="ref-events-single"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                  <Endpoint
+                    method="POST"
+                    path="/api/events/batch"
+                    description="Track multiple events at once. Max 100 per batch."
+                    reqBody={`{
+  "events": [
+    {
+      "event_name": "page_view",
+      "user_id": "visitor_abc",
+      "properties": { "page": "/signup" },
+      "timestamp": "2025-01-16T08:12:00Z"
+    },
+    {
+      "event_name": "signup_click",
+      "user_id": "visitor_abc",
+      "timestamp": "2025-01-16T08:14:30Z"
+    }
+  ]
+}`}
+                    resBody={`{ "success": true, "processed": 2, "failed": 0 }`}
+                    id="ref-events-batch"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                </div>
+              </div>
+
+              {/* Metrics */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-teal-500" />
+                  Metrics
+                </h3>
+                <div className="space-y-4">
+                  <Endpoint
+                    method="POST"
+                    path="/api/metrics"
+                    description="Create a new metric definition."
+                    reqBody={`{
+  "name": "Revenue per User",
+  "key": "revenue_per_user",
+  "type": "revenue",
+  "event_name": "purchase",
+  "aggregation": "sum",
+  "unit": "USD"
+}`}
+                    resBody={`{
+  "id": "met_abc123",
+  "name": "Revenue per User",
+  "key": "revenue_per_user",
+  "type": "revenue",
+  "created_at": "2025-01-15T10:30:00Z"
+}`}
+                    id="ref-metrics-create"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                  <Endpoint
+                    method="GET"
+                    path="/api/metrics"
+                    description="List all metric definitions."
+                    resBody={`{
+  "metrics": [
+    { "id": "met_abc123", "name": "Revenue per User", "key": "revenue_per_user", "type": "revenue" },
+    { "id": "met_def456", "name": "Signup Clicks", "key": "signup_clicks", "type": "conversion" }
+  ],
+  "total": 2
+}`}
+                    id="ref-metrics-list"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                </div>
+              </div>
+
+              {/* Feature Flags */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-rose-500" />
+                  Feature Flags
+                </h3>
+                <div className="space-y-4">
+                  <Endpoint
+                    method="POST"
+                    path="/api/flags"
+                    description="Create a new feature flag."
+                    reqBody={`{
+  "name": "Dark Mode",
+  "key": "dark_mode",
+  "description": "Enable dark mode for users",
+  "enabled": false,
+  "targeting_rules": {
+    "percentage": 0,
+    "attributes": { "plan": ["pro", "enterprise"] }
+  }
+}`}
+                    resBody={`{
+  "id": "flag_abc123",
+  "key": "dark_mode",
+  "name": "Dark Mode",
+  "enabled": false,
+  "created_at": "2025-01-15T10:30:00Z"
+}`}
+                    id="ref-flags-create"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                  <Endpoint method="GET" path="/api/flags" description="List all feature flags." resBody={`{ "flags": [{ "id": "flag_abc123", "key": "dark_mode", "name": "Dark Mode", "enabled": false }], "total": 1 }`} id="ref-flags-list" copied={copied} onCopy={handleCopy} />
+                  <Endpoint method="POST" path="/api/flags/:id/toggle" description="Toggle a feature flag on or off." reqBody={`{ "enabled": true }`} resBody={`{ "id": "flag_abc123", "key": "dark_mode", "enabled": true }`} id="ref-flags-toggle" copied={copied} onCopy={handleCopy} />
+                  <Endpoint
+                    method="POST"
+                    path="/api/flags/evaluate"
+                    description="Evaluate a feature flag for a specific user."
+                    reqBody={`{
+  "flag_key": "dark_mode",
+  "user_id": "visitor_abc",
+  "attributes": { "plan": "pro", "country": "US" }
+}`}
+                    resBody={`{
+  "flag_key": "dark_mode",
+  "enabled": true,
+  "user_id": "visitor_abc",
+  "reason": "targeting_match"
+}`}
+                    id="ref-flags-evaluate"
+                    copied={copied}
+                    onCopy={handleCopy}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Back to top */}
         <div className="flex justify-center pt-4">
           <a
-            href="#quick-start"
+            href="#first-test"
             className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-primary-600 transition-colors"
           >
             <ArrowUp className="w-3.5 h-3.5" />
@@ -1092,16 +1346,5 @@ curl -X GET ${BASE}/api/experiments/exp_abc123/results \\
         </div>
       </div>
     </div>
-  );
-}
-
-// Small inline alert icon component
-function AlertIcon() {
-  return (
-    <svg className="w-4 h-4 text-red-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-      <line x1="12" y1="9" x2="12" y2="13" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
   );
 }
