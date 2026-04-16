@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
+import rateLimit from 'express-rate-limit';
 
 import experimentsRouter from './routes/experiments';
 import assignmentRouter from './routes/assignment';
@@ -18,6 +19,38 @@ app.use(helmet());
 app.use(compression());
 app.use(express.json({ limit: '1mb' }));
 
+// --- Rate Limiting ---
+
+// General API: 100 requests per minute per IP
+const generalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+});
+
+// Assignment endpoint: 200 requests per minute per IP (SDKs call this frequently)
+const assignmentLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many assignment requests, please try again later.' },
+});
+
+// Events endpoint: 500 requests per minute per IP (batch events)
+const eventsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many event requests, please try again later.' },
+});
+
+// Apply general limiter to all API routes
+app.use('/api', generalLimiter);
+
 // --- Health check ---
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'agdam-bagdam', timestamp: new Date().toISOString() });
@@ -25,8 +58,8 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // --- Routes ---
 app.use('/api/experiments', experimentsRouter);
-app.use('/api/assign', assignmentRouter);
-app.use('/api/events', eventsRouter);
+app.use('/api/assign', assignmentLimiter, assignmentRouter);
+app.use('/api/events', eventsLimiter, eventsRouter);
 app.use('/api/flags', flagsRouter);
 app.use('/api/metrics', metricsRouter);
 app.use('/api/projects', projectsRouter);

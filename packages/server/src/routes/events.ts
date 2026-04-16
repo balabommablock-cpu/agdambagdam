@@ -7,6 +7,15 @@ import { query } from '../db/pool';
 const router = Router();
 router.use(authenticateClient);
 
+// --- Timestamp validation helper ---
+const MAX_FUTURE_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function isTimestampTooFarInFuture(timestamp: string | undefined): boolean {
+  if (!timestamp) return false;
+  const ts = new Date(timestamp).getTime();
+  return ts > Date.now() + MAX_FUTURE_MS;
+}
+
 // --- Schemas ---
 
 const trackEventSchema = z.object({
@@ -39,6 +48,11 @@ router.post('/', validate({ body: trackEventSchema }), async (req: Request, res:
 
   const { userId, metricKey, value, properties, timestamp } = req.body;
 
+  if (isTimestampTooFarInFuture(timestamp)) {
+    res.status(400).json({ error: 'Event timestamp is more than 24 hours in the future.' });
+    return;
+  }
+
   await query(
     `INSERT INTO events (project_id, user_id, metric_key, value, properties, timestamp)
      VALUES ($1, $2, $3, $4, $5, COALESCE($6::timestamptz, now()))`,
@@ -57,6 +71,14 @@ router.post('/batch', validate({ body: batchEventsSchema }), async (req: Request
   }
 
   const { events } = req.body;
+
+  // Validate timestamps — reject the entire batch if any event is too far in the future
+  for (const event of events) {
+    if (isTimestampTooFarInFuture(event.timestamp)) {
+      res.status(400).json({ error: 'One or more event timestamps are more than 24 hours in the future.' });
+      return;
+    }
+  }
 
   // Build a single multi-row INSERT for efficiency
   const values: any[] = [];

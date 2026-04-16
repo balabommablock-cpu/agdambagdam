@@ -291,9 +291,20 @@ export async function getExperimentResults(experimentId: string): Promise<Experi
       });
     }
 
-    // Find control variant
-    const controlStats = variantStats.find((v) => v.isControl);
-    const treatmentStats = variantStats.filter((v) => !v.isControl);
+    // Find control variant — auto-detect if none explicitly marked
+    let controlStats = variantStats.find((v) => v.isControl);
+    if (!controlStats) {
+      // Fallback: variant with key "control"
+      controlStats = variantStats.find((v) => v.variantKey === 'control');
+    }
+    if (!controlStats && variantStats.length > 0) {
+      // Last resort: use the first variant
+      controlStats = variantStats[0];
+    }
+    if (controlStats) {
+      controlStats.isControl = true;
+    }
+    const treatmentStats = variantStats.filter((v) => v !== controlStats);
 
     // 6b. Frequentist analysis — each treatment vs control
     const frequentistResults: Record<string, FrequentistTreatmentResult> = {};

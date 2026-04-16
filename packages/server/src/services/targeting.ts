@@ -95,13 +95,33 @@ function evaluateCondition(condition: TargetingCondition, context: Record<string
  *
  * Empty rules array means "target everyone".
  */
+/**
+ * Normalize input that may be flat rules or proper conditions.
+ * Flat format: [{attribute, operator, value}, ...]
+ * Proper format: [{rules: [...], logic: "and"}, ...]
+ *
+ * Detects by checking whether the first element has a `rules` property.
+ */
+function normalizeConditions(input: any[]): TargetingCondition[] {
+  if (input.length === 0) return [];
+
+  // If the first element has a `rules` array, assume proper TargetingCondition[] format
+  if (Array.isArray((input[0] as any).rules)) {
+    return input as TargetingCondition[];
+  }
+
+  // Otherwise treat the entire array as flat TargetingRule[] and wrap it
+  return [{ rules: input as TargetingRule[], logic: 'and' }];
+}
+
 export function evaluateTargeting(
-  conditions: TargetingCondition[],
+  conditions: TargetingCondition[] | TargetingRule[],
   context: Record<string, any>
 ): boolean {
   if (!conditions || conditions.length === 0) {
     return true; // No targeting = everyone qualifies
   }
 
-  return conditions.some((condition) => evaluateCondition(condition, context));
+  const normalized = normalizeConditions(conditions as any[]);
+  return normalized.some((condition) => evaluateCondition(condition, context));
 }
