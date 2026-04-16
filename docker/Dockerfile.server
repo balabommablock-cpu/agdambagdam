@@ -1,0 +1,18 @@
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package.json package-lock.json* ./
+COPY packages/stats/package.json packages/stats/
+COPY packages/server/package.json packages/server/
+RUN npm install --workspace=packages/stats --workspace=packages/server
+COPY packages/stats/ packages/stats/
+COPY packages/server/ packages/server/
+RUN npm run build -w packages/stats && npm run build -w packages/server
+
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=builder /app/packages/server/dist ./dist
+COPY --from=builder /app/packages/server/src/db/schema.sql ./schema.sql
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/server/package.json ./
+EXPOSE 3456
+CMD ["node", "dist/index.js"]

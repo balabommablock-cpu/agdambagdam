@@ -1,0 +1,32 @@
+{
+  "name": "abacus",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open-source experimentation platform. A/B testing, feature flags, and statistical analysis that makes $500K/year tools obsolete.",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:dashboard\"",
+    "dev:server": "npm run dev -w packages/server",
+    "dev:dashboard": "npm run dev -w packages/dashboard",
+    "build": "npm run build -w packages/stats && npm run build -w packages/sdk-js && npm run build -w packages/sdk-node && npm run build -w packages/server && npm run build -w packages/dashboard",
+    "build:stats": "npm run build -w packages/stats",
+    "build:sdk": "npm run build -w packages/sdk-js",
+    "build:server": "npm run build -w packages/server",
+    "build:dashboard": "npm run build -w packages/dashboard",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "db:migrate": "npm run migrate -w packages/server",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "license": "MIT"
+}
