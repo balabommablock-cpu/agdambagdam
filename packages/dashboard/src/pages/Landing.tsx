@@ -48,18 +48,18 @@ interface CompRow {
 
 const COMP_ROWS: CompRow[] = [
   { feature: 'A/B Testing',                  ab: 'yes',    vwo: 'yes',  optimizely: 'yes',  launchdarkly: 'addon', statsig: 'yes',  growthbook: 'yes' },
-  { feature: 'Multivariate Testing',         ab: 'yes',    vwo: 'yes',  optimizely: 'yes',  launchdarkly: 'no',    statsig: 'yes',  growthbook: 'yes' },
+  { feature: 'Multivariate Testing',         ab: 'Multi-variant (A/B/C/D)',    vwo: 'yes',  optimizely: 'yes',  launchdarkly: 'no',    statsig: 'yes',  growthbook: 'yes' },
   { feature: 'Feature Flags',                ab: 'yes',    vwo: 'no',   optimizely: 'yes',  launchdarkly: 'yes',   statsig: 'yes',  growthbook: 'yes' },
   { feature: 'Bayesian Stats',               ab: 'yes',    vwo: 'yes',  optimizely: 'no',   launchdarkly: 'no',    statsig: 'yes',  growthbook: 'no' },
   { feature: 'Frequentist Stats',            ab: 'yes',    vwo: 'no',   optimizely: 'yes',  launchdarkly: 'yes',   statsig: 'yes',  growthbook: 'yes' },
-  { feature: 'CUPED Variance Reduction',     ab: 'yes',    vwo: 'no',   optimizely: 'no',   launchdarkly: 'no',    statsig: 'yes',  growthbook: 'paid' },
+  { feature: 'CUPED Variance Reduction (stats engine)',  ab: 'yes',    vwo: 'no',   optimizely: 'no',   launchdarkly: 'no',    statsig: 'yes',  growthbook: 'paid' },
   { feature: 'Sequential Testing',           ab: 'yes',    vwo: 'no',   optimizely: 'no',   launchdarkly: 'no',    statsig: 'yes',  growthbook: 'paid' },
   { feature: 'SRM Detection',                ab: 'yes',    vwo: 'no',   optimizely: 'no',   launchdarkly: 'no',    statsig: 'yes',  growthbook: 'paid' },
   { feature: 'Multi-Armed Bandits',          ab: 'yes',    vwo: 'no',   optimizely: 'yes',  launchdarkly: 'no',    statsig: 'yes',  growthbook: 'paid' },
-  { feature: 'Contextual Bandits (LinUCB)',   ab: 'yes',    vwo: 'no',   optimizely: 'no',   launchdarkly: 'no',    statsig: 'yes',  growthbook: 'no' },
+  { feature: 'Contextual Bandits (library)',   ab: 'yes',    vwo: 'no',   optimizely: 'no',   launchdarkly: 'no',    statsig: 'yes',  growthbook: 'no' },
   { feature: 'Visual Editor',                ab: 'coming', vwo: 'yes',  optimizely: 'yes',  launchdarkly: 'no',    statsig: 'no',   growthbook: 'no' },
   { feature: 'Warehouse Native',             ab: 'coming', vwo: 'no',   optimizely: 'no',   launchdarkly: 'no',    statsig: 'yes',  growthbook: 'yes' },
-  { feature: 'Privacy First (GDPR/CCPA)',    ab: 'yes',    vwo: 'no',   optimizely: 'no',   launchdarkly: 'no',    statsig: 'no',   growthbook: 'yes' },
+  { feature: 'Privacy-First Design',          ab: 'yes',    vwo: 'no',   optimizely: 'no',   launchdarkly: 'no',    statsig: 'no',   growthbook: 'yes' },
   { feature: 'Self-Hosted',                  ab: 'yes',    vwo: 'no',   optimizely: 'no',   launchdarkly: 'no',    statsig: 'no',   growthbook: 'yes' },
   { feature: 'Open Source',                  ab: 'yes',    vwo: 'no',   optimizely: 'no',   launchdarkly: 'no',    statsig: 'no',   growthbook: 'partial' },
 ];
@@ -137,8 +137,8 @@ const STAT_CARDS: { icon: React.ReactNode; title: string; desc: string }[] = [
 /* ──────────────────── tech logos (CSS-only) ────────────────────── */
 
 const TECH_STACK = [
-  'React', 'Next.js', 'Vue', 'Angular', 'Node.js',
-  'Python', 'Go', 'Ruby', 'iOS', 'Android',
+  'JavaScript', 'TypeScript', 'React', 'Next.js', 'Node.js',
+  'Any HTTP Client (REST API)',
 ];
 
 /* ──────────────────── pricing competitors ─────────────────────── */
@@ -699,7 +699,7 @@ export default function Landing() {
               Works everywhere
             </h2>
             <p className="mt-4 text-slate-400 text-lg">
-              One SDK. Every platform. 5 minutes to integrate.
+              JS/TS SDKs + REST API. 5 minutes to integrate.
             </p>
           </div>
 
@@ -717,8 +717,8 @@ export default function Landing() {
 
           <div className="mt-10 text-center">
             <p className="text-sm text-slate-500">
-              JavaScript &bull; TypeScript &bull; React &bull; Node.js &bull; Python &bull; Go
-              &bull; Any HTTP client
+              JavaScript &bull; TypeScript &bull; React &bull; Next.js &bull; Node.js
+              &bull; Any HTTP client (REST API)
             </p>
           </div>
         </div>
