@@ -8,3 +8,5 @@ coverage/
 .vite/
 .vercel
 .env*.local
+!packages/sdk-js/dist/
+!packages/sdk-node/dist/

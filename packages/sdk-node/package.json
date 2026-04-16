@@ -1,11 +1,19 @@
 {
-  "name": "@abacus/sdk-node",
+  "name": "agdambagdam-node",
   "version": "0.1.0",
+  "description": "Node.js SDK for Agdam Bagdam A/B testing platform.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/balabommablock-cpu/agdambagdam.git",
+    "directory": "packages/sdk-node"
   },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "files": ["dist/", "src/", "README.md"],
   "devDependencies": {
     "typescript": "^5.7.0",
     "@types/node": "^22.0.0"

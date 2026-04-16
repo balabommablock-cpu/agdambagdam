@@ -1,14 +1,23 @@
 {
-  "name": "@abacus/sdk-js",
+  "name": "agdambagdam",
   "version": "0.1.0",
+  "description": "Lightweight A/B testing SDK. Free, open-source, better statistics than $500K/year tools.",
   "main": "dist/abacus.js",
   "module": "dist/abacus.esm.js",
   "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/balabommablock-cpu/agdambagdam.git",
+    "directory": "packages/sdk-js"
+  },
+  "keywords": ["ab-testing", "experimentation", "feature-flags", "split-testing", "bayesian", "statistics"],
   "scripts": {
     "build": "tsc && node build.js",
     "dev": "tsc --watch",
-    "test": "npx tsx --test src/hash.test.ts"
+    "test": "npx tsx --test src/hash.test.ts",
+    "prepublishOnly": "npm run build"
   },
+  "files": ["dist/", "src/", "README.md"],
   "devDependencies": {
     "typescript": "^5.7.0"
   },
