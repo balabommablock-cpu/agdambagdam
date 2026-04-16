@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-04-16T18:23:34.310Z",
+  "config": {
+    "trials": 10000,
+    "alpha": 0.05,
+    "seed": 42,
+    "output": "packages/stats/benchmarks/results/2026-04-16.json",
+    "quick": false
+  },
+  "results": [
+    {
+      "name": "Frequentist z-test — reference parity",
+      "metric": "p-value vs unpooled closed-form reference",
+      "target": 0.1528,
+      "observed": 0.15291787829315173,
+      "ci95": [
+        0.1478,
+        0.1578
+      ],
+      "guarantee": "equals",
+      "pass": true,
+      "trials": 1,
+      "notes": "1000/100 vs 1000/120, two-sided unpooled; SciPy pooled ref is 0.1746 (see scipy_reference.py)"
+    },
+    {
+      "name": "Frequentist z-test — Type I error",
+      "metric": "False positive rate under H₀",
+      "target": 0.05,
+      "observed": 0.0484,
+      "ci95": [
+        0.04436429825452712,
+        0.052782541815391604
+      ],
+      "guarantee": "equals",
+      "pass": true,
+      "trials": 10000,
+      "notes": "n=1000 per arm, p=0.1, two-sided z-test"
+    },
+    {
+      "name": "Sequential (obrien-fleming) — overall Type I error",
+      "metric": "False positive rate across peeking",
+      "target": 0.05,
+      "observed": 0.0377,
+      "ci95": [
+        0.034140820008447904,
+        0.04161423792849502
+      ],
+      "guarantee": "leq",
+      "pass": true,
+      "trials": 10000,
+      "notes": "4 looks, n=2000 total per arm, p=0.1"
+    },
+    {
+      "name": "Sequential (pocock) — overall Type I error",
+      "metric": "False positive rate across peeking",
+      "target": 0.05,
+      "observed": 0.0347,
+      "ci95": [
+        0.03128775155853098,
+        0.03846961045327855
+      ],
+      "guarantee": "leq",
+      "pass": true,
+      "trials": 10000,
+      "notes": "4 looks, n=2000 total per arm, p=0.1"
+    },
+    {
+      "name": "SRM detector — Type I error",
+      "metric": "False SRM flag rate under true 50/50",
+      "target": 0.01,
+      "observed": 0.0116,
+      "ci95": [
+        0.009680884264037688,
+        0.013894219124244666
+      ],
+      "guarantee": "leq",
+      "pass": true,
+      "trials": 10000,
+      "notes": "N=10000, chi-squared threshold α=0.01"
+    },
+    {
+      "name": "CUPED variance reduction",
+      "metric": "Empirical VR vs theoretical ρ²",
+      "target": 0.48999999999999994,
+      "observed": 0.4863016387339353,
+      "ci95": [
+        0.45630163873393526,
+        0.5163016387339353
+      ],
+      "guarantee": "equals",
+      "pass": true,
+      "trials": 5000,
+      "notes": "ρ=0.7, theoretical VR=0.4900, abs error=0.0037"
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  }
+}

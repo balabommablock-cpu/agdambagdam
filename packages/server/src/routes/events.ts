@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { validate } from '../middleware/validate';
 import { authenticateClient } from '../middleware/auth';
 import { query } from '../db/pool';
+import { sendError } from '../lib/errors';
 
 const router = Router();
 router.use(authenticateClient);
@@ -42,14 +43,16 @@ const batchEventsSchema = z.object({
 router.post('/', validate({ body: trackEventSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
   const { userId, metricKey, value, properties, timestamp } = req.body;
 
   if (isTimestampTooFarInFuture(timestamp)) {
-    res.status(400).json({ error: 'Event timestamp is more than 24 hours in the future.' });
+    sendError(res, 'EVENT_TIMESTAMP_TOO_FUTURE', {
+      context: { timestamp, nowMs: Date.now(), maxFutureMs: MAX_FUTURE_MS },
+    });
     return;
   }
 
@@ -66,7 +69,7 @@ router.post('/', validate({ body: trackEventSchema }), async (req: Request, res:
 router.post('/batch', validate({ body: batchEventsSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -75,7 +78,9 @@ router.post('/batch', validate({ body: batchEventsSchema }), async (req: Request
   // Validate timestamps — reject the entire batch if any event is too far in the future
   for (const event of events) {
     if (isTimestampTooFarInFuture(event.timestamp)) {
-      res.status(400).json({ error: 'One or more event timestamps are more than 24 hours in the future.' });
+      sendError(res, 'EVENT_BATCH_TIMESTAMP_TOO_FUTURE', {
+        context: { offendingTimestamp: event.timestamp, nowMs: Date.now(), maxFutureMs: MAX_FUTURE_MS },
+      });
       return;
     }
   }

@@ -1,0 +1,100 @@
+name: Bug report
+description: Something is broken or not working as documented
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Before you submit, please check:
+
+        1. This is not a security vulnerability — security issues go through [SECURITY.md](../blob/main/SECURITY.md), not public issues.
+        2. A search of [existing issues](../issues?q=is%3Aissue) doesn't already cover this.
+        3. You can reproduce on `main` (or the latest release).
+
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      description: Which version of Agdam Bagdam? If you're on `main`, paste the short SHA.
+      placeholder: "v0.1.0 or 17c9932"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Where does the bug live?
+      options:
+        - "packages/stats (statistics engine)"
+        - "packages/server (API)"
+        - "packages/sdk-js (browser SDK)"
+        - "packages/sdk-node (Node SDK)"
+        - "packages/dashboard (UI)"
+        - "docker / deployment"
+        - "docs / README"
+        - "not sure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: A clear description of the bug. Include error messages verbatim.
+      placeholder: |
+        When I call `sdk.track('signup', { value: 1 })`, I get a 400 with message "...".
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      placeholder: The event should be accepted and show up in the dashboard within ~30s.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Minimal steps a maintainer can follow. Code snippets in fenced blocks.
+      placeholder: |
+        1. Clone repo at <sha>
+        2. `docker-compose up -d`
+        3. `npm run db:migrate`
+        4. Run `curl -X POST http://localhost:3456/api/...`
+        5. Observe response
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Node version, OS, browser (if applicable), Docker version.
+      placeholder: |
+        - Node: 22.11.0
+        - OS: Ubuntu 24.04
+        - Browser: Chrome 138
+        - Docker: 27.0
+      render: markdown
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / stack traces
+      description: Redact secrets. Paste inside the code block.
+      render: shell
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmation
+      options:
+        - label: I've searched existing issues and this isn't a duplicate
+          required: true
+        - label: This isn't a security issue (those go through SECURITY.md)
+          required: true

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agdam Bagdam — HTML Quickstart</title>
+  <style>
+    /* Styles are cosmetic. The SDK behaviour is independent of them. */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 520px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+      color: #1a1a1a;
+      line-height: 1.5;
+    }
+    h1 { font-size: 1.75rem; margin-bottom: 0.5rem; }
+    p  { color: #555; }
+    #signup-btn {
+      padding: 14px 28px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+      margin-top: 1rem;
+    }
+    #signup-btn:hover { transform: translateY(-1px); }
+    #status {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: #f4f4f5;
+      border-radius: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.875rem;
+      white-space: pre-wrap;
+    }
+    #clicks { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+
+  <!--
+    STEP 1 — The experiment markup.
+    We start with a generic button. The SDK will decide its colour below.
+  -->
+  <h1>Which button gets more clicks?</h1>
+  <p>Open this page in 10 different browsers. About half will see one colour, half the other. The same browser always sees the same colour — assignment is deterministic, not random.</p>
+
+  <button id="signup-btn">Sign up</button>
+
+  <!-- Status panel — just so you can see what's happening. Not needed in production. -->
+  <div id="status">Loading the SDK…</div>
+
+
+  <!--
+    STEP 2 — Load the SDK from a CDN.
+    Production: you'd probably self-host or pin a specific version.
+    For this example, `@latest` is fine.
+  -->
+  <script src="https://unpkg.com/agdambagdam@latest/dist/abacus.js"></script>
+
+
+  <!--
+    STEP 3 — Wire up the experiment.
+    Three things happen:
+      (a) We create an Abacus client pointing at the demo API.
+      (b) We ask which variant this visitor should see and change the button colour.
+      (c) We count clicks by calling `ab.track()` when the button is clicked.
+  -->
+  <script>
+    const statusEl = document.getElementById('status');
+    const btn = document.getElementById('signup-btn');
+    let clicks = 0;
+
+    // (a) Create the client. Swap these values for your own once you have an account.
+    const ab = new Abacus({
+      apiKey: 'demo-public-key',
+      baseUrl: 'https://boredfolio.com/agdambagdam/api',
+      // `userId` is optional. If omitted, the SDK generates a sticky anonymous ID
+      // and stores it in localStorage so the same browser keeps seeing the same variant.
+    });
+
+    // (b) Ask for a variant.
+    // The experiment key here (`button-color-test`) is something you create in the dashboard.
+    // If the experiment doesn't exist or the API is unreachable, this resolves to 'control'
+    // and your UI just falls through — it never crashes.
+    ab.getVariant('button-color-test').then((variant) => {
+      applyVariant(variant);
+      statusEl.textContent =
+        `Variant: ${variant}\n` +
+        `Assignment is sticky — same browser, same variant, forever.\n` +
+        `Clicks tracked so far: 0`;
+    }).catch((err) => {
+      // On network failure we still want the page to work. Apply the control.
+      applyVariant('control');
+      statusEl.textContent =
+        `Couldn't reach the API (${err.message}).\n` +
+        `Fell through to control variant. The page still works.`;
+    });
+
+    function applyVariant(variant) {
+      // The variant is a string you chose in the dashboard — e.g. 'control' / 'green' / 'purple'.
+      // You decide what each variant means. Here, 'green' means a green button; everything else is blue.
+      if (variant === 'green') {
+        btn.style.backgroundColor = '#16a34a';
+      } else {
+        btn.style.backgroundColor = '#2563eb';
+      }
+    }
+
+    // (c) Track clicks.
+    // `ab.track('signup-click')` sends a metric event. Value and properties are optional.
+    //   - To track revenue: ab.track('purchase', 49.99);
+    //   - To add dimensions: ab.track('signup-click', 1, { page: 'home' });
+    btn.addEventListener('click', () => {
+      ab.track('signup-click');
+      clicks += 1;
+      statusEl.textContent = statusEl.textContent.replace(
+        /Clicks tracked so far: \d+/,
+        `Clicks tracked so far: ${clicks}`
+      );
+    });
+  </script>
+
+</body>
+</html>

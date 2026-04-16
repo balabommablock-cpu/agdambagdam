@@ -1,0 +1,89 @@
+name: Statistical correctness issue
+description: Output from the stats engine disagrees with a reference implementation or theoretical guarantee
+labels: ["stats-correctness", "P0"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Numerical correctness is **security-equivalent** for this project. Reports here are prioritized as P0.
+
+        Before submitting, confirm:
+        - This is a deviation from a *reference implementation* (SciPy, R, textbook, paper) or a *theoretical guarantee* (e.g., Type I error ≤ α).
+        - It is not a convention difference (pooled vs unpooled variance, continuity correction, etc.) — those are documented in [BENCHMARKS.md](../blob/main/BENCHMARKS.md).
+        - You can reproduce with seed and input data provided below.
+
+  - type: input
+    id: method
+    attributes:
+      label: Which statistical method?
+      placeholder: "frequentistTest / bayesianTest / sequentialTest / cupedAdjust / checkSrm / Thompson sampling / ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: inputs
+    attributes:
+      label: Exact inputs
+      description: The exact SampleData, options, and any seeds used.
+      render: typescript
+      placeholder: |
+        const control = { count: 1000, conversions: 100, mean: 0.1, variance: 0.09 };
+        const treatment = { count: 1000, conversions: 120, mean: 0.12, variance: 0.1056 };
+        const result = frequentistTest(control, treatment);
+    validations:
+      required: true
+
+  - type: input
+    id: our-value
+    attributes:
+      label: Our value
+      placeholder: "e.g. p = 0.1529"
+    validations:
+      required: true
+
+  - type: input
+    id: reference-value
+    attributes:
+      label: Reference value
+      placeholder: "e.g. p = 0.1746"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reference-source
+    attributes:
+      label: Reference source
+      description: Cite the exact function / package / paper / textbook section. Include a reproducible snippet if possible.
+      placeholder: |
+        scipy version: 1.14.1
+        statsmodels.stats.proportion.proportions_ztest(count=[100,120], nobs=[1000,1000], alternative='two-sided')
+        Returns: (-1.3572, 0.1747)
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: absolute-error
+    attributes:
+      label: Absolute / relative error
+      description: How far apart are they?
+      placeholder: |
+        |0.1529 - 0.1746| = 0.0217 absolute, 12.4% relative
+
+  - type: textarea
+    id: theoretical-guarantee
+    attributes:
+      label: If this is a guarantee violation, which one?
+      description: e.g. "Type I error exceeds α across 10k simulated trials under H₀"
+      placeholder: |
+        Ran 10,000 simulations under H₀: p_c = p_t = 0.1. Observed rejection rate 0.072, 95% Wilson CI [0.067, 0.077], which exceeds α = 0.05.
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmation
+      options:
+        - label: I've read BENCHMARKS.md and this isn't a documented convention difference
+          required: true
+        - label: I can reproduce with the inputs and seed provided
+          required: true

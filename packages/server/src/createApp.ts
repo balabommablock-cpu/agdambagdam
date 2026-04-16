@@ -26,6 +26,7 @@ import eventsRouter from './routes/events';
 import flagsRouter from './routes/flags';
 import metricsRouter from './routes/metrics';
 import projectsRouter from './routes/projects';
+import { sendError } from './lib/errors';
 
 export interface CreateAppOptions {
   /** Shared rate-limit store (e.g. RedisStore). If omitted, uses MemoryStore (per-process). */
@@ -124,7 +125,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
 
   // --- API 404 (only for /api/* — non-API falls through to SPA) ---
   app.use('/api', (_req: Request, res: Response) => {
-    res.status(404).json({ error: 'Not found' });
+    sendError(res, 'NOT_FOUND');
   });
 
   // --- Unified error handler ---
@@ -138,7 +139,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
     // body-parser emits SyntaxError with status 400 for bad JSON and
     // `type === 'entity.too.large'` for oversized payloads.
     if (err?.type === 'entity.parse.failed' || err instanceof SyntaxError) {
-      res.status(400).json({ error: 'Invalid JSON body.' });
+      sendError(res, 'INVALID_JSON_BODY');
       return;
     }
     if (err?.type === 'entity.too.large') {

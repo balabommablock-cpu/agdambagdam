@@ -1,0 +1,39 @@
+{
+  "name": "create-agdambagdam",
+  "version": "0.1.0",
+  "description": "One-command scaffolder for Agdam Bagdam. Detects your framework, drops in the right snippet, prints next steps.",
+  "type": "module",
+  "bin": {
+    "create-agdambagdam": "./bin/create-agdambagdam.mjs"
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "src/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "create",
+    "agdambagdam",
+    "ab-testing",
+    "experimentation",
+    "scaffolder"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/balabommablock-cpu/agdambagdam.git",
+    "directory": "packages/create-agdambagdam"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { query, queryOne } from '../db/pool';
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/auth';
+import { sendError } from '../lib/errors';
 
 const router = Router();
 router.use(authenticate);
@@ -18,7 +19,7 @@ const createProjectSchema = z.object({
 // GET /api/projects — list projects for org
 router.get('/', async (req: Request, res: Response) => {
   if (!req.org) {
-    res.status(401).json({ error: 'Not authenticated.' });
+    sendError(res, 'NOT_AUTHENTICATED');
     return;
   }
 
@@ -32,7 +33,7 @@ router.get('/', async (req: Request, res: Response) => {
 // POST /api/projects — create project
 router.post('/', validate({ body: createProjectSchema }), async (req: Request, res: Response) => {
   if (!req.org) {
-    res.status(401).json({ error: 'Not authenticated.' });
+    sendError(res, 'NOT_AUTHENTICATED');
     return;
   }
 

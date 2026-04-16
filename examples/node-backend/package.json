@@ -1,0 +1,16 @@
+{
+  "name": "agdambagdam-example-node-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agdam Bagdam server-side assignment in an Express app",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@agdambagdam/sdk-node": "^0.1.0",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.0.0"
+  }
+}

@@ -11,6 +11,33 @@ const MAX_RETRIES = 3;
 const BASE_RETRY_DELAY = 1000; // 1s
 
 /**
+ * Same shape as the SDK's top-level logApiError, but scoped to the queue
+ * module so it can be tree-shaken independently. Logs a kid-friendly
+ * message for failed event batches.
+ *
+ * We only log the FIRST failure per retry cycle — subsequent retries share
+ * the same root cause and would spam the console otherwise.
+ */
+async function logBatchError(res: Response): Promise<void> {
+  if (typeof console === 'undefined' || !console.error) return;
+  try {
+    const body = await res.clone().json();
+    const detail = body?.errorDetail;
+    const code = body?.errorCode ?? `HTTP_${res.status}`;
+    const title = detail?.title ?? body?.error ?? `Event batch failed with status ${res.status}`;
+    const howToFix = detail?.howToFix;
+    const docsUrl = detail?.docsUrl;
+    const groupFn = (console as any).groupCollapsed ?? console.error;
+    groupFn.call(console, `[agdambagdam] ❌ ${title}  (${code} · events/batch)`);
+    if (howToFix) console.error(`  → Fix: ${howToFix}`);
+    if (docsUrl) console.error(`  → Docs: ${docsUrl}`);
+    if (console.groupEnd) console.groupEnd();
+  } catch {
+    console.error(`[agdambagdam] ❌ events/batch failed with status ${res.status}`);
+  }
+}
+
+/**
  * Event batching queue with automatic flushing and retry logic.
  */
 export class EventQueue {
@@ -66,6 +93,7 @@ export class EventQueue {
       });
 
       if (!res.ok) {
+        await logBatchError(res);
         throw new Error(`HTTP ${res.status}`);
       }
 

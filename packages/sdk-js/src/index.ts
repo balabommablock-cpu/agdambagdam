@@ -32,6 +32,40 @@ const CACHE_KEY_EXPERIMENTS = 'experiments';
 const CACHE_KEY_FEATURES = 'features';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+/**
+ * Parse a structured error response from the Agdam Bagdam API and log a
+ * kid-friendly message to the browser console.
+ *
+ * The API returns:
+ *   {
+ *     error: "...human title...",
+ *     errorCode: "UPPER_SNAKE_CASE",
+ *     errorDetail: { title, howToFix, docsUrl, context? }
+ *   }
+ *
+ * We format those into a 3-line console.error with a clickable docs link.
+ * Silent on environments without console (e.g. some embedded runtimes).
+ */
+async function logApiError(res: Response, endpoint: string): Promise<void> {
+  if (typeof console === 'undefined' || !console.error) return;
+  try {
+    const body = await res.clone().json();
+    const detail = body?.errorDetail;
+    const code = body?.errorCode ?? `HTTP_${res.status}`;
+    const title = detail?.title ?? body?.error ?? `Request failed with status ${res.status}`;
+    const howToFix = detail?.howToFix;
+    const docsUrl = detail?.docsUrl;
+    // Group makes these collapsible; fall back to individual lines if unsupported.
+    const groupFn = (console as any).groupCollapsed ?? console.error;
+    groupFn.call(console, `[agdambagdam] ❌ ${title}  (${code} · ${endpoint})`);
+    if (howToFix) console.error(`  → Fix: ${howToFix}`);
+    if (docsUrl) console.error(`  → Docs: ${docsUrl}`);
+    if (console.groupEnd) console.groupEnd();
+  } catch {
+    console.error(`[agdambagdam] ❌ ${endpoint} failed with status ${res.status} (no error detail parsed)`);
+  }
+}
+
 export class Abacus {
   private config: Required<
     Pick<AbacusConfig, 'apiKey' | 'baseUrl' | 'autoTrack' | 'respectDNT' | 'stickyBucketing'>
@@ -226,6 +260,7 @@ export class Abacus {
       });
 
       if (!res.ok) {
+        await logApiError(res, 'assign/bulk');
         throw new Error(`HTTP ${res.status}`);
       }
 

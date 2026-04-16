@@ -1,0 +1,219 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22', '24']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build all packages
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Typecheck all workspaces
+        run: |
+          set -e
+          for pkg in packages/*; do
+            if [ -f "$pkg/tsconfig.json" ]; then
+              echo "Typechecking $pkg"
+              (cd "$pkg" && npx tsc --noEmit)
+            fi
+          done
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Run linters (if configured)
+        run: npm run lint --if-present
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: npm audit (production dependencies only)
+        run: npm audit --omit=dev --audit-level=high
+
+  semgrep:
+    name: Static analysis (semgrep)
+    runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run semgrep
+        run: semgrep ci --config auto
+        env:
+          SEMGREP_RULES: >
+            p/security-audit
+            p/secrets
+            p/typescript
+            p/javascript
+            p/nodejs
+            p/owasp-top-ten
+
+  bundle-size:
+    name: Bundle size (sdk-js)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build sdk-js
+        run: npm run build:sdk
+
+      - name: Enforce bundle size budget
+        run: |
+          set -e
+          # sdk-js must stay under 5 KB gzipped (README claim), with ceiling at 20 KB raw
+          DIST=packages/sdk-js/dist
+          if [ ! -d "$DIST" ]; then
+            echo "::error::Expected build output at $DIST"
+            exit 1
+          fi
+          # Find the main bundle (prefer .min.js, then .js)
+          BUNDLE=$(ls -S "$DIST"/*.min.js 2>/dev/null | head -n1 || ls -S "$DIST"/*.js 2>/dev/null | head -n1)
+          if [ -z "$BUNDLE" ]; then
+            echo "::error::No JS bundle found in $DIST"
+            exit 1
+          fi
+          RAW=$(wc -c < "$BUNDLE")
+          GZ=$(gzip -c "$BUNDLE" | wc -c)
+          echo "Bundle: $BUNDLE"
+          echo "Raw:     $RAW bytes"
+          echo "Gzipped: $GZ bytes"
+          # Budgets
+          MAX_GZ=15360   # 15 KB gzipped (README claims 14.7 KB; small headroom for patches)
+          MAX_RAW=51200  # 50 KB raw
+          if [ "$GZ" -gt "$MAX_GZ" ]; then
+            echo "::error::Gzipped size $GZ exceeds budget $MAX_GZ"
+            exit 1
+          fi
+          if [ "$RAW" -gt "$MAX_RAW" ]; then
+            echo "::error::Raw size $RAW exceeds budget $MAX_RAW"
+            exit 1
+          fi
+
+  secrets-scan:
+    name: Secrets scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  license-check:
+    name: License compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Check for GPL / AGPL / copyleft in prod dependencies
+        run: |
+          npx license-checker --production --onlyAllow "MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;CC0-1.0;CC-BY-4.0;Unlicense;0BSD;Python-2.0;BlueOak-1.0.0" --summary
+
+  stats-validation:
+    name: Statistical validation (Monte Carlo)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build stats package
+        run: npm run build:stats
+
+      - name: Run Monte Carlo validation (10k trials, seed=42)
+        run: |
+          mkdir -p packages/stats/benchmarks/results
+          npx tsx packages/stats/benchmarks/monte-carlo.ts \
+            --seed 42 \
+            --output "packages/stats/benchmarks/results/ci-${{ github.sha }}.json"
+
+      - name: Upload validation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stats-validation-${{ github.sha }}
+          path: packages/stats/benchmarks/results/ci-${{ github.sha }}.json
+          retention-days: 90

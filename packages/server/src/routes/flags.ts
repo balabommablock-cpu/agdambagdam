@@ -4,6 +4,7 @@ import { query, queryOne } from '../db/pool';
 import { validate } from '../middleware/validate';
 import { authenticate, authenticateClient } from '../middleware/auth';
 import { evaluateTargeting, TargetingCondition } from '../services/targeting';
+import { sendError } from '../lib/errors';
 import murmurhash from 'murmurhash-js';
 
 const router = Router();
@@ -49,7 +50,7 @@ function hashToPercentage(flagKey: string, userId: string): number {
 router.get('/', authenticate, async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -64,7 +65,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
 router.post('/', authenticate, validate({ body: createFlagSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -85,13 +86,13 @@ router.post('/', authenticate, validate({ body: createFlagSchema }), async (req:
 router.put('/:id', authenticate, validate({ params: idParamSchema, body: updateFlagSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
   const existing = await queryOne('SELECT id FROM feature_flags WHERE id = $1 AND project_id = $2', [req.params.id, projectId]);
   if (!existing) {
-    res.status(404).json({ error: 'Feature flag not found.' });
+    sendError(res, 'FEATURE_FLAG_NOT_FOUND');
     return;
   }
 
@@ -141,7 +142,7 @@ router.put('/:id', authenticate, validate({ params: idParamSchema, body: updateF
 router.post('/:id/toggle', authenticate, validate({ params: idParamSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -151,7 +152,7 @@ router.post('/:id/toggle', authenticate, validate({ params: idParamSchema }), as
   );
 
   if (!flag) {
-    res.status(404).json({ error: 'Feature flag not found.' });
+    sendError(res, 'FEATURE_FLAG_NOT_FOUND');
     return;
   }
 
@@ -167,7 +168,7 @@ router.post('/:id/toggle', authenticate, validate({ params: idParamSchema }), as
 router.post('/evaluate', authenticateClient, validate({ body: evaluateFlagsSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 

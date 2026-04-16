@@ -5,6 +5,7 @@ import { authenticateClient } from '../middleware/auth';
 import { assignVariant } from '../services/assignment';
 import { query as dbQuery } from '../db/pool';
 import { evaluateTargeting, TargetingCondition } from '../services/targeting';
+import { sendError } from '../lib/errors';
 import murmurhash from 'murmurhash-js';
 
 const router = Router();
@@ -36,7 +37,7 @@ function hashToPercentage(flagKey: string, userId: string): number {
 router.post('/', validate({ body: assignSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -49,7 +50,7 @@ router.post('/', validate({ body: assignSchema }), async (req: Request, res: Res
 router.post('/bulk', validate({ body: bulkAssignSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 

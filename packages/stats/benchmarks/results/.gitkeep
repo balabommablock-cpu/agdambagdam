@@ -1,0 +1,4 @@
+# Benchmark run results
+
+CI writes dated JSON files here on each run to `main`.
+Format: YYYY-MM-DD.json (see monte-carlo.ts --output).

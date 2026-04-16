@@ -1,0 +1,92 @@
+version: 2
+updates:
+  # ───────────────────────────────────────────
+  # GitHub Actions — weekly, same day as npm
+  # ───────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Kolkata"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "ci"
+    open-pull-requests-limit: 5
+
+  # ───────────────────────────────────────────
+  # npm — root + each workspace. Weekly, grouped.
+  # Security updates always open immediately regardless of schedule.
+  # ───────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Kolkata"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+    open-pull-requests-limit: 10
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+      production-minor-patch:
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+    ignore:
+      # Major version bumps of these require deliberate review — do not auto-PR.
+      - dependency-name: "express"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "pg"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+
+  # ───────────────────────────────────────────
+  # pip — benchmarks/requirements.txt only
+  # ───────────────────────────────────────────
+  - package-ecosystem: "pip"
+    directory: "/packages/stats/benchmarks"
+    schedule:
+      interval: "monthly"
+      day: "first monday"
+      timezone: "Asia/Kolkata"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "benchmarks"
+    open-pull-requests-limit: 3
+
+  # ───────────────────────────────────────────
+  # docker — Dockerfiles in docker/
+  # ───────────────────────────────────────────
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule:
+      interval: "monthly"
+      day: "first monday"
+      timezone: "Asia/Kolkata"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
+    open-pull-requests-limit: 3

@@ -9,6 +9,7 @@ import ExperimentCreate from './pages/ExperimentCreate';
 import ExperimentDetail from './pages/ExperimentDetail';
 import FeatureFlags from './pages/FeatureFlags';
 import Metrics from './pages/Metrics';
+import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 
@@ -34,6 +35,12 @@ export default function App() {
 
       {/* Settings is always reachable so users can paste in their key. */}
       <Route path="/settings" element={<Layout><Settings /></Layout>} />
+
+      {/* 3-step onboarding wizard. Gated because it creates an experiment. */}
+      <Route
+        path="/onboarding"
+        element={<Layout><Protected feature="Onboarding"><Onboarding /></Protected></Layout>}
+      />
 
       {/* Gated routes render Layout + AuthGate when no key, real page when keyed. */}
       <Route

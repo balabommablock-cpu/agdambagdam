@@ -5,6 +5,7 @@ import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/auth';
 import { getExperimentResults } from '../services/results';
 import { clearExperimentCache } from '../services/assignment';
+import { sendError } from '../lib/errors';
 
 function paramId(req: Request): string {
   const id = req.params.id;
@@ -60,7 +61,7 @@ const idParamSchema = z.object({ id: z.string().uuid() });
 router.get('/', async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id header or query param.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -82,7 +83,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', validate({ body: createExperimentSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -91,7 +92,10 @@ router.post('/', validate({ body: createExperimentSchema }), async (req: Request
   // Validate variant weights sum to ~1
   const weightSum = body.variants.reduce((s: number, v: any) => s + v.weight, 0);
   if (Math.abs(weightSum - 1.0) > 0.01) {
-    res.status(400).json({ error: `Variant weights must sum to 1.0, got ${weightSum}` });
+    sendError(res, 'EXPERIMENT_VARIANT_WEIGHTS_INVALID', {
+      title: `Variant weights must sum to 1.0, got ${weightSum}.`,
+      context: { weightSum },
+    });
     return;
   }
 
@@ -106,7 +110,7 @@ router.post('/', validate({ body: createExperimentSchema }), async (req: Request
   );
 
   if (!experiment) {
-    res.status(500).json({ error: 'Failed to create experiment.' });
+    sendError(res, 'FAILED_TO_CREATE_EXPERIMENT');
     return;
   }
 
@@ -140,7 +144,7 @@ router.post('/', validate({ body: createExperimentSchema }), async (req: Request
 router.get('/:id', validate({ params: idParamSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -150,7 +154,7 @@ router.get('/:id', validate({ params: idParamSchema }), async (req: Request, res
   );
 
   if (!experiment) {
-    res.status(404).json({ error: 'Experiment not found.' });
+    sendError(res, 'EXPERIMENT_NOT_FOUND');
     return;
   }
 
@@ -174,7 +178,7 @@ router.get('/:id', validate({ params: idParamSchema }), async (req: Request, res
 router.put('/:id', validate({ params: idParamSchema, body: updateExperimentSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -184,7 +188,7 @@ router.put('/:id', validate({ params: idParamSchema, body: updateExperimentSchem
   );
 
   if (!existing) {
-    res.status(404).json({ error: 'Experiment not found.' });
+    sendError(res, 'EXPERIMENT_NOT_FOUND');
     return;
   }
 
@@ -220,7 +224,10 @@ router.put('/:id', validate({ params: idParamSchema, body: updateExperimentSchem
   if (body.variants) {
     const weightSum = body.variants.reduce((s: number, v: any) => s + v.weight, 0);
     if (Math.abs(weightSum - 1.0) > 0.01) {
-      res.status(400).json({ error: `Variant weights must sum to 1.0, got ${weightSum}` });
+      sendError(res, 'EXPERIMENT_VARIANT_WEIGHTS_INVALID', {
+        title: `Variant weights must sum to 1.0, got ${weightSum}.`,
+        context: { weightSum },
+      });
       return;
     }
 
@@ -235,7 +242,7 @@ router.put('/:id', validate({ params: idParamSchema, body: updateExperimentSchem
         );
       }
     } else {
-      res.status(400).json({ error: 'Cannot modify variants after experiment has started.' });
+      sendError(res, 'EXPERIMENT_VARIANTS_LOCKED_AFTER_START');
       return;
     }
   }
@@ -251,7 +258,7 @@ router.put('/:id', validate({ params: idParamSchema, body: updateExperimentSchem
 router.post('/:id/start', validate({ params: idParamSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -261,18 +268,21 @@ router.post('/:id/start', validate({ params: idParamSchema }), async (req: Reque
   );
 
   if (!experiment) {
-    res.status(404).json({ error: 'Experiment not found.' });
+    sendError(res, 'EXPERIMENT_NOT_FOUND');
     return;
   }
   if (experiment.status !== 'draft' && experiment.status !== 'paused') {
-    res.status(400).json({ error: `Cannot start experiment in '${experiment.status}' status.` });
+    sendError(res, 'EXPERIMENT_WRONG_STATUS_FOR_START', {
+      title: `Cannot start experiment in '${experiment.status}' status.`,
+      context: { currentStatus: experiment.status },
+    });
     return;
   }
 
   // Ensure experiment has variants
   const variants = await query('SELECT id FROM variants WHERE experiment_id = $1', [paramId(req)]);
   if (variants.length < 2) {
-    res.status(400).json({ error: 'Experiment needs at least 2 variants to start.' });
+    sendError(res, 'EXPERIMENT_NOT_ENOUGH_VARIANTS');
     return;
   }
 
@@ -290,7 +300,7 @@ router.post('/:id/start', validate({ params: idParamSchema }), async (req: Reque
 router.post('/:id/pause', validate({ params: idParamSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -300,11 +310,11 @@ router.post('/:id/pause', validate({ params: idParamSchema }), async (req: Reque
   );
 
   if (!experiment) {
-    res.status(404).json({ error: 'Experiment not found.' });
+    sendError(res, 'EXPERIMENT_NOT_FOUND');
     return;
   }
   if (experiment.status !== 'running') {
-    res.status(400).json({ error: 'Can only pause running experiments.' });
+    sendError(res, 'EXPERIMENT_CANNOT_PAUSE_NON_RUNNING');
     return;
   }
 
@@ -321,7 +331,7 @@ router.post('/:id/pause', validate({ params: idParamSchema }), async (req: Reque
 router.post('/:id/complete', validate({ params: idParamSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -331,11 +341,14 @@ router.post('/:id/complete', validate({ params: idParamSchema }), async (req: Re
   );
 
   if (!experiment) {
-    res.status(404).json({ error: 'Experiment not found.' });
+    sendError(res, 'EXPERIMENT_NOT_FOUND');
     return;
   }
   if (experiment.status !== 'running' && experiment.status !== 'paused') {
-    res.status(400).json({ error: `Cannot complete experiment in '${experiment.status}' status.` });
+    sendError(res, 'EXPERIMENT_WRONG_STATUS_FOR_COMPLETE', {
+      title: `Cannot complete experiment in '${experiment.status}' status.`,
+      context: { currentStatus: experiment.status },
+    });
     return;
   }
 
@@ -353,7 +366,7 @@ router.post('/:id/complete', validate({ params: idParamSchema }), async (req: Re
 router.get('/:id/results', validate({ params: idParamSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -363,7 +376,7 @@ router.get('/:id/results', validate({ params: idParamSchema }), async (req: Requ
     [paramId(req), projectId]
   );
   if (!experiment) {
-    res.status(404).json({ error: 'Experiment not found.' });
+    sendError(res, 'EXPERIMENT_NOT_FOUND');
     return;
   }
 
@@ -372,7 +385,7 @@ router.get('/:id/results', validate({ params: idParamSchema }), async (req: Requ
     res.json({ results });
   } catch (err: any) {
     if (err.message?.includes('not found')) {
-      res.status(404).json({ error: err.message });
+      sendError(res, 'EXPERIMENT_NOT_FOUND', { title: err.message });
     } else {
       throw err;
     }
@@ -383,7 +396,7 @@ router.get('/:id/results', validate({ params: idParamSchema }), async (req: Requ
 router.delete('/:id', validate({ params: idParamSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -393,12 +406,12 @@ router.delete('/:id', validate({ params: idParamSchema }), async (req: Request, 
   );
 
   if (!experiment) {
-    res.status(404).json({ error: 'Experiment not found.' });
+    sendError(res, 'EXPERIMENT_NOT_FOUND');
     return;
   }
 
   if (experiment.status === 'running') {
-    res.status(400).json({ error: 'Cannot archive a running experiment. Pause or complete it first.' });
+    sendError(res, 'EXPERIMENT_CANNOT_ARCHIVE_RUNNING');
     return;
   }
 

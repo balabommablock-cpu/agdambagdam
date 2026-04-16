@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { query, queryOne } from '../db/pool';
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/auth';
+import { sendError } from '../lib/errors';
 
 const router = Router();
 router.use(authenticate);
@@ -36,7 +37,7 @@ const idParamSchema = z.object({ id: z.string().uuid() });
 router.get('/', async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -51,7 +52,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', validate({ body: createMetricSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
@@ -72,13 +73,13 @@ router.post('/', validate({ body: createMetricSchema }), async (req: Request, re
 router.put('/:id', validate({ params: idParamSchema, body: updateMetricSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
   const existing = await queryOne('SELECT id FROM metrics WHERE id = $1 AND project_id = $2', [req.params.id, projectId]);
   if (!existing) {
-    res.status(404).json({ error: 'Metric not found.' });
+    sendError(res, 'METRIC_NOT_FOUND');
     return;
   }
 
@@ -114,13 +115,13 @@ router.put('/:id', validate({ params: idParamSchema, body: updateMetricSchema })
 router.delete('/:id', validate({ params: idParamSchema }), async (req: Request, res: Response) => {
   const projectId = req.projectId;
   if (!projectId) {
-    res.status(400).json({ error: 'Missing project_id.' });
+    sendError(res, 'MISSING_PROJECT_ID');
     return;
   }
 
   const existing = await queryOne('SELECT id FROM metrics WHERE id = $1 AND project_id = $2', [req.params.id, projectId]);
   if (!existing) {
-    res.status(404).json({ error: 'Metric not found.' });
+    sendError(res, 'METRIC_NOT_FOUND');
     return;
   }
 
@@ -133,7 +134,7 @@ router.delete('/:id', validate({ params: idParamSchema }), async (req: Request, 
   );
 
   if (linked && parseInt(linked.cnt, 10) > 0) {
-    res.status(400).json({ error: 'Cannot delete metric linked to active experiments.' });
+    sendError(res, 'METRIC_LINKED_TO_EXPERIMENT');
     return;
   }
 

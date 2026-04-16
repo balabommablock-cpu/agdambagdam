@@ -1,0 +1,54 @@
+name: Feature request
+description: Propose a new capability or improvement
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before you submit: we say **no** to most feature requests on purpose. Focused scope is the point. Read [FEATURES.md](../blob/main/FEATURES.md) first — if the feature is already planned, upvote that issue instead.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What pain are you experiencing? Describe the problem, not a solution.
+      placeholder: |
+        I'm running a multi-variant experiment and need to detect when a single variant is underperforming enough to stop early, but our current setup only supports stopping when we cross a single boundary.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: If you have a specific idea, describe it. Otherwise leave blank — we'd rather start from the problem.
+      placeholder: |
+        Optional: Add per-variant futility boundaries to sequentialTest. API sketch:
+        `sequentialTest(c, t, { futilityStopping: true, futilityBound: 0.3 })`
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      placeholder: |
+        - Manually stopping variants by disabling assignment — doesn't give valid inference.
+        - Running separate experiments — loses statistical power.
+
+  - type: dropdown
+    id: who-does-this-serve
+    attributes:
+      label: Who does this serve?
+      options:
+        - "Individual developer / tinkerer"
+        - "Product / growth team at a startup"
+        - "Data science / experimentation team at a larger org"
+        - "Platform / infrastructure team"
+        - "Regulated industry (healthcare, finance, etc.)"
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmation
+      options:
+        - label: I've checked FEATURES.md and this isn't already planned
+          required: true

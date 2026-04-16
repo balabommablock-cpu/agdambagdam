@@ -1,0 +1,73 @@
+{%- comment -%}
+  Agdam Bagdam — Shopify theme embed.
+
+  Install:
+    1. In your Shopify admin: Online Store → Themes → (your theme) → Actions → Edit code.
+    2. Under Snippets, click "Add a new snippet" and name it `agdambagdam`.
+    3. Paste this entire file into that snippet.
+    4. Open `layout/theme.liquid` and add the following line inside the <head>:
+
+         {%- render 'agdambagdam' -%}
+
+    5. Save. The SDK loads on every page of your storefront.
+
+  Customise by editing the metafields below, or by changing the example experiment.
+{%- endcomment -%}
+
+{%- liquid
+  assign ab_api_key = 'demo-public-key'
+  assign ab_base_url = 'https://boredfolio.com/agdambagdam/api'
+  assign ab_experiment_key = 'shopify-add-to-cart-test'
+-%}
+
+<script src="https://unpkg.com/agdambagdam@latest/dist/abacus.js" async></script>
+<script>
+  (function () {
+    function waitForSDK(cb, tries) {
+      tries = tries || 0;
+      if (typeof window.Abacus !== 'undefined') cb();
+      else if (tries < 50) setTimeout(function () { waitForSDK(cb, tries + 1); }, 100);
+    }
+
+    waitForSDK(function () {
+      var ab = new window.Abacus({
+        apiKey: {{ ab_api_key | json }},
+        baseUrl: {{ ab_base_url | json }},
+        // Use Shopify's customer ID if the visitor is logged in, fallback is
+        // handled automatically by the SDK's anonymous-ID generator.
+        userId: {% if customer %}{{ customer.id | json }}{% else %}undefined{% endif %}
+      });
+
+      // Store the promise globally so any theme template can await it.
+      window.__abacusReady = ab.getVariant({{ ab_experiment_key | json }}).then(function (variant) {
+        document.documentElement.setAttribute('data-ab-variant', variant);
+        return variant;
+      }).catch(function () {
+        document.documentElement.setAttribute('data-ab-variant', 'control');
+        return 'control';
+      });
+
+      // Track add-to-cart as a conversion on this experiment.
+      document.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t) return;
+        var isCart =
+          (t.name === 'add' && t.type === 'submit') ||
+          (t.classList && (t.classList.contains('add-to-cart') || t.classList.contains('product-form__submit')));
+        if (isCart) {
+          ab.track({{ ab_experiment_key | append: '-add-to-cart' | json }});
+        }
+      }, true);
+    });
+  })();
+</script>
+
+{%- comment -%}
+  Now you can style variants anywhere in your theme with CSS:
+
+    [data-ab-variant="treatment"] .product-form__submit {
+      background-color: #16a34a !important;
+    }
+
+  Or read `data-ab-variant` in any Liquid/JS you write.
+{%- endcomment -%}
