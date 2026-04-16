@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
+import Docs from './pages/Docs';
 import ExperimentList from './pages/ExperimentList';
 import ExperimentCreate from './pages/ExperimentCreate';
 import ExperimentDetail from './pages/ExperimentDetail';
@@ -27,9 +28,11 @@ export default function App() {
               <Route path="/flags" element={<FeatureFlags />} />
               <Route path="/metrics" element={<Metrics />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/docs" element={<Docs />} />
             </Routes>
           </Layout>
         } />
+        <Route path="/docs" element={<Layout><Docs /></Layout>} />
         <Route path="*" element={<Landing />} />
       </Routes>
     );
@@ -46,6 +49,7 @@ export default function App() {
         <Route path="/flags/new" element={<FeatureFlags />} />
         <Route path="/metrics" element={<Metrics />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/docs" element={<Docs />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
