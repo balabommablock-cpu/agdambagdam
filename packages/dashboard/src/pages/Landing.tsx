@@ -64,9 +64,9 @@ interface CompRow {
 const COMP_ROWS: CompRow[] = [
   { feature: 'A/B Testing',              ab: 'yes',    vwo: 'yes',  optimizely: 'yes',  launchdarkly: 'addon', statsig: 'yes',  growthbook: 'yes' },
   { feature: 'Multi-Variant Testing',    ab: 'yes',    vwo: 'yes',  optimizely: 'yes',  launchdarkly: 'no',    statsig: 'yes',  growthbook: 'yes' },
-  { feature: 'Feature Flags',            ab: 'yes',    vwo: 'no',   optimizely: 'yes',  launchdarkly: 'yes',   statsig: 'yes',  growthbook: 'yes' },
-  { feature: 'Bayesian Stats',           ab: 'yes',    vwo: 'yes',  optimizely: 'no',   launchdarkly: 'no',    statsig: 'yes',  growthbook: 'no', bold: true },
-  { feature: 'Frequentist Stats',        ab: 'yes',    vwo: 'no',   optimizely: 'yes',  launchdarkly: 'yes',   statsig: 'yes',  growthbook: 'yes', bold: true },
+  { feature: 'Feature Flags',            ab: 'yes',    vwo: 'yes',  optimizely: 'yes',  launchdarkly: 'yes',   statsig: 'yes',  growthbook: 'yes' },
+  { feature: 'Bayesian Stats',           ab: 'yes',    vwo: 'yes',  optimizely: 'yes',  launchdarkly: 'no',    statsig: 'yes',  growthbook: 'yes', bold: true },
+  { feature: 'Frequentist Stats',        ab: 'yes',    vwo: 'yes',  optimizely: 'yes',  launchdarkly: 'yes',   statsig: 'yes',  growthbook: 'yes', bold: true },
   { feature: 'CUPED Variance Reduction', ab: 'partial', vwo: 'no',   optimizely: 'no',   launchdarkly: 'no',    statsig: 'yes',  growthbook: 'paid', bold: true },
   { feature: 'Sequential Testing',       ab: 'yes',    vwo: 'no',   optimizely: 'no',   launchdarkly: 'no',    statsig: 'yes',  growthbook: 'paid', bold: true },
   { feature: 'SRM Detection',            ab: 'yes',    vwo: 'no',   optimizely: 'no',   launchdarkly: 'no',    statsig: 'yes',  growthbook: 'paid', bold: true },
@@ -217,7 +217,7 @@ export default function Landing() {
 
           <div className="flex items-center gap-3">
             <a
-              href="https://github.com/agdambagdam/abacus"
+              href="https://github.com/balabommablock-cpu/agdambagdam"
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition"
@@ -276,7 +276,7 @@ export default function Landing() {
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </a>
             <a
-              href="https://github.com/agdambagdam/abacus"
+              href="https://github.com/balabommablock-cpu/agdambagdam"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium px-8 py-3.5 rounded-xl text-base transition"
@@ -353,11 +353,11 @@ export default function Landing() {
               </div>
               <h3 className="text-lg font-bold mb-3 text-slate-900">Add One Line</h3>
               <div className="relative bg-slate-900 rounded-lg p-4 font-mono text-xs text-slate-300 overflow-x-auto">
-                <CopyButton text='<script src="https://cdn.agdambagdam.com/sdk.js"></script>' />
+                <CopyButton text='<script src="/path/to/abacus.js"></script>' />
                 <code>
                   <span className="text-emerald-400">&lt;script</span>{' '}
                   <span className="text-indigo-300">src</span>=
-                  <span className="text-amber-300">"https://cdn.agdambagdam.com/sdk.js"</span>
+                  <span className="text-amber-300">"/path/to/abacus.js"</span>
                   <span className="text-emerald-400">&gt;&lt;/script&gt;</span>
                 </code>
               </div>
@@ -584,7 +584,7 @@ export default function Landing() {
             </div>
             <div className="p-6">
               <a
-                href="https://github.com/agdambagdam/abacus"
+                href="https://github.com/balabommablock-cpu/agdambagdam"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block group"
@@ -617,9 +617,9 @@ export default function Landing() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-300 mb-2">Clone the repo</p>
                 <div className="relative bg-slate-900 border border-white/[0.08] rounded-lg p-4 font-mono text-sm text-slate-300 overflow-x-auto">
-                  <CopyButton text="git clone https://github.com/agdambagdam/abacus.git" />
+                  <CopyButton text="git clone https://github.com/balabommablock-cpu/agdambagdam.git" />
                   <code>
-                    <span className="text-slate-500">$</span> git clone https://github.com/agdambagdam/abacus.git
+                    <span className="text-slate-500">$</span> git clone https://github.com/balabommablock-cpu/agdambagdam.git
                   </code>
                 </div>
               </div>
@@ -667,9 +667,9 @@ export default function Landing() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-300 mb-2">Add to your site</p>
                 <div className="relative bg-slate-900 border border-white/[0.08] rounded-lg p-4 font-mono text-xs sm:text-sm text-slate-300 overflow-x-auto">
-                  <CopyButton text={`<script src="https://cdn.agdambagdam.com/sdk.js"></script>\n<script>\n  const variant = await new Abacus({apiKey: 'your-key'}).getVariant('checkout-btn');\n  button.onclick = () => ab.track('purchase');\n</script>`} />
+                  <CopyButton text={`<script src="/path/to/abacus.js"></script>\n<script>\n  const variant = await new Abacus({apiKey: 'your-key'}).getVariant('checkout-btn');\n  button.onclick = () => ab.track('purchase');\n</script>`} />
                   <code>
-                    <div><span className="text-emerald-400">&lt;script</span> <span className="text-indigo-300">src</span>=<span className="text-amber-300">"https://cdn.agdambagdam.com/sdk.js"</span><span className="text-emerald-400">&gt;&lt;/script&gt;</span></div>
+                    <div><span className="text-emerald-400">&lt;script</span> <span className="text-indigo-300">src</span>=<span className="text-amber-300">"/path/to/abacus.js"</span><span className="text-emerald-400">&gt;&lt;/script&gt;</span></div>
                     <div><span className="text-emerald-400">&lt;script&gt;</span></div>
                     <div>{'  '}<span className="text-indigo-300">const</span> variant = <span className="text-indigo-300">await new</span> <span className="text-emerald-400">Abacus</span>({'{'}<span className="text-slate-400">apiKey</span>: <span className="text-amber-300">'your-key'</span>{'}'}).<span className="text-emerald-400">getVariant</span>(<span className="text-amber-300">'checkout-btn'</span>);</div>
                     <div>{'  '}button.onclick = () =&gt; ab.<span className="text-emerald-400">track</span>(<span className="text-amber-300">'purchase'</span>);</div>
@@ -716,7 +716,7 @@ export default function Landing() {
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </a>
             <a
-              href="https://github.com/agdambagdam/abacus"
+              href="https://github.com/balabommablock-cpu/agdambagdam"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-slate-500 hover:text-indigo-600 font-medium text-lg transition"
@@ -740,7 +740,7 @@ export default function Landing() {
 
             <div className="flex items-center gap-6 text-sm text-slate-500">
               <a
-                href="https://github.com/agdambagdam/abacus"
+                href="https://github.com/balabommablock-cpu/agdambagdam"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-slate-900 transition flex items-center gap-1"

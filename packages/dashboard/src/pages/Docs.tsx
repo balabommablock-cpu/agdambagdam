@@ -317,7 +317,7 @@ export default function Docs() {
     "key": "signup_clicks",
     "name": "Signup Button Clicks",
     "type": "conversion",
-    "event_name": "signup_click"
+    "metricKey": "signup_click"
   }'`}
                   id="step2-metric"
                   copied={copied}
@@ -354,12 +354,10 @@ export default function Docs() {
     "key": "signup-button-color",
     "description": "Test if a green button gets more signups than blue",
     "variants": [
-      { "name": "blue", "weight": 50 },
-      { "name": "green", "weight": 50 }
+      { "name": "blue", "weight": 0.5 },
+      { "name": "green", "weight": 0.5 }
     ],
-    "targeting_rules": {
-      "percentage": 100
-    }
+    "targeting_rules": []
   }'`}
                   id="step3-experiment"
                   copied={copied}
@@ -379,11 +377,11 @@ export default function Docs() {
                   </div>
                   <div className="flex items-start gap-2">
                     <ChevronRight className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
-                    <span className="text-sm text-slate-700 dark:text-slate-300"><strong>&quot;variants&quot;</strong> -- The versions you are testing. &quot;weight: 50&quot; means 50% of visitors see this version.</span>
+                    <span className="text-sm text-slate-700 dark:text-slate-300"><strong>&quot;variants&quot;</strong> -- The versions you are testing. &quot;weight: 0.5&quot; means 50% of visitors see this version (0-1 float).</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <ChevronRight className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
-                    <span className="text-sm text-slate-700 dark:text-slate-300"><strong>&quot;targeting_rules.percentage&quot;</strong> -- What percentage of your total traffic enters this test. 100 = everyone.</span>
+                    <span className="text-sm text-slate-700 dark:text-slate-300"><strong>&quot;targeting_rules&quot;</strong> -- An array of targeting rules for this test. An empty array means all traffic is eligible.</span>
                   </div>
                 </div>
               </div>
@@ -437,8 +435,8 @@ export default function Docs() {
   -H "x-api-key: YOUR_API_KEY" \\
   -H "x-project-id: YOUR_PROJECT_ID" \\
   -d '{
-    "experiment_key": "signup-button-color",
-    "user_id": "visitor_abc"
+    "experimentKey": "signup-button-color",
+    "userId": "visitor_abc"
   }'`}
                   id="step5-assign"
                   copied={copied}
@@ -451,8 +449,8 @@ export default function Docs() {
                   lines={[
                     { code: '{' },
                     { code: '  "variant": "green",', annotation: 'Show this visitor the green button', color: 'green' },
-                    { code: '  "experiment_key": "signup-button-color",', annotation: 'Which test this belongs to', color: 'slate' },
-                    { code: '  "user_id": "visitor_abc"', annotation: 'The visitor you asked about', color: 'slate' },
+                    { code: '  "experimentKey": "signup-button-color",', annotation: 'Which test this belongs to', color: 'slate' },
+                    { code: '  "userId": "visitor_abc"', annotation: 'The visitor you asked about', color: 'slate' },
                     { code: '}' },
                   ]}
                   id="step5-response"
@@ -486,8 +484,8 @@ export default function Docs() {
   -H "x-api-key: YOUR_API_KEY" \\
   -H "x-project-id: YOUR_PROJECT_ID" \\
   -d '{
-    "event_name": "signup_click",
-    "user_id": "visitor_abc"
+    "metricKey": "signup_click",
+    "userId": "visitor_abc"
   }'`}
                   id="step6-track"
                   copied={copied}
@@ -496,7 +494,7 @@ export default function Docs() {
               </div>
               <div className="mt-3 ml-10">
                 <Callout type="warning">
-                  Use the same <strong>user_id</strong> you used in Step 5. That is how Agdam Bagdam connects the dots: &quot;visitor_abc saw the green button AND clicked signup.&quot;
+                  Use the same <strong>userId</strong> you used in Step 5. That is how Agdam Bagdam connects the dots: &quot;visitor_abc saw the green button AND clicked signup.&quot;
                 </Callout>
               </div>
             </div>
@@ -624,27 +622,28 @@ export default function Docs() {
                   </div>
                   <CodeBlock
                     code={`<!-- Drop this into your HTML page -->
-<script src="https://unpkg.com/@abacus/sdk-js/dist/abacus.min.js"></script>
+<script src="/path/to/abacus.js"></script>
 <script>
   // 1. Connect to your Agdam Bagdam server
-  var ab = new Abacus.Client({
+  var ab = new Abacus({
     apiKey: 'YOUR_API_KEY',
-    apiUrl: '${BASE}',
+    baseUrl: '${BASE}',
+    userId: 'visitor_abc',
   });
 
   // 2. Find out which version this visitor should see
-  //    (uses a cookie or local storage to keep it consistent)
-  var variant = ab.getVariant('signup-button-color', 'visitor_abc');
-
-  // 3. Show the right version
-  if (variant === 'green') {
-    document.getElementById('signup-btn').style.backgroundColor = '#22c55e';
-  }
-  // If variant is 'blue', do nothing -- blue is the default
+  //    (uses localStorage to keep it consistent)
+  ab.getVariant('signup-button-color').then(function(variant) {
+    // 3. Show the right version
+    if (variant === 'green') {
+      document.getElementById('signup-btn').style.backgroundColor = '#22c55e';
+    }
+    // If variant is 'blue', do nothing -- blue is the default
+  });
 
   // 4. Track when they click the button
   document.getElementById('signup-btn').addEventListener('click', function() {
-    ab.track('signup_click', 'visitor_abc');
+    ab.track('signup_click');
   });
 </script>`}
                     id="sdk-html"
@@ -656,37 +655,29 @@ export default function Docs() {
               {activeSDK === 'react' && (
                 <div>
                   <div className="px-4 pt-4">
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Use the React hook for seamless integration with React apps.</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Use the Abacus class directly in React. Initialize once and use throughout your app.</p>
                   </div>
                   <CodeBlock
-                    code={`import { AbacusProvider, useExperiment, useTrack } from '@abacus/sdk-js/react';
+                    code={`import Abacus from '@abacus/sdk-js';
 
-// Step 1: Wrap your app with the provider (do this once, at the top level)
-function App() {
-  return (
-    <AbacusProvider
-      apiKey="YOUR_API_KEY"
-      apiUrl="${BASE}"
-      userId={currentUser.id}  // Your logged-in user's ID
-    >
-      <SignupPage />
-    </AbacusProvider>
-  );
-}
+// Step 1: Create an instance (do this once, e.g. in a module or context)
+const ab = new Abacus({
+  apiKey: 'YOUR_API_KEY',
+  baseUrl: '${BASE}',
+  userId: currentUser.id,  // Your logged-in user's ID
+});
 
-// Step 2: Use the hook in any component
+// Step 2: Use in any component
 function SignupPage() {
-  // This tells you which variant to show
-  const { variant, loading } = useExperiment('signup-button-color');
+  const [variant, setVariant] = useState('blue');
 
-  // This gives you a function to track events
-  const track = useTrack();
-
-  if (loading) return <div>Loading...</div>;
+  useEffect(() => {
+    ab.getVariant('signup-button-color').then(setVariant);
+  }, []);
 
   return (
     <button
-      onClick={() => track('signup_click')}
+      onClick={() => ab.track('signup_click')}
       style={{ backgroundColor: variant === 'green' ? '#22c55e' : '#3b82f6' }}
     >
       Sign Up Free
@@ -705,12 +696,12 @@ function SignupPage() {
                     <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">For server-rendered apps (Express, Next.js, etc). The variant is decided before the page loads.</p>
                   </div>
                   <CodeBlock
-                    code={`const { AbacusClient } = require('@abacus/sdk-node');
+                    code={`const { AbacusNode } = require('@abacus/sdk-node');
 
 // Step 1: Create a client (do this once when your server starts)
-const ab = new AbacusClient({
+const ab = new AbacusNode({
   apiKey: 'YOUR_API_KEY',
-  apiUrl: '${BASE}',
+  baseUrl: '${BASE}',
 });
 
 // Step 2: Get the variant when a user requests the page
@@ -726,7 +717,7 @@ app.get('/signup', async (req, res) => {
 
 // Step 4: Track events when something happens
 app.post('/signup-click', async (req, res) => {
-  await ab.track('signup_click', req.session.userId);
+  ab.track(req.session.userId, 'signup_click');
   res.json({ success: true });
 });`}
                     id="sdk-node"
@@ -746,7 +737,7 @@ curl -X POST ${BASE}/api/assign \\
   -H "Content-Type: application/json" \\
   -H "x-api-key: YOUR_API_KEY" \\
   -H "x-project-id: YOUR_PROJECT_ID" \\
-  -d '{"experiment_key": "signup-button-color", "user_id": "visitor_abc"}'
+  -d '{"experimentKey": "signup-button-color", "userId": "visitor_abc"}'
 
 # Response: {"variant": "green", ...}
 # Use that value to render the right version in your app.
@@ -756,7 +747,7 @@ curl -X POST ${BASE}/api/events \\
   -H "Content-Type: application/json" \\
   -H "x-api-key: YOUR_API_KEY" \\
   -H "x-project-id: YOUR_PROJECT_ID" \\
-  -d '{"event_name": "signup_click", "user_id": "visitor_abc"}'`}
+  -d '{"metricKey": "signup_click", "userId": "visitor_abc"}'`}
                     id="sdk-curl"
                     copied={copied}
                     onCopy={handleCopy}
@@ -1010,19 +1001,19 @@ curl -X POST ${BASE}/api/events \\
   "key": "signup-button-color",
   "description": "Test green vs blue button on signup",
   "variants": [
-    { "name": "blue", "weight": 50 },
-    { "name": "green", "weight": 50 }
+    { "name": "blue", "weight": 0.5 },
+    { "name": "green", "weight": 0.5 }
   ],
-  "targeting_rules": { "percentage": 100 }
+  "targeting_rules": []
 }`}
                     resBody={`{
-  "id": "exp_abc123",
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "name": "Signup Button Color",
   "key": "signup-button-color",
   "status": "draft",
   "variants": [
-    { "id": "var_1", "name": "blue", "weight": 50 },
-    { "id": "var_2", "name": "green", "weight": 50 }
+    { "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901", "name": "blue", "weight": 0.5 },
+    { "id": "c3d4e5f6-a7b8-9012-cdef-123456789012", "name": "green", "weight": 0.5 }
   ],
   "created_at": "2025-01-15T10:30:00Z"
 }`}
@@ -1037,7 +1028,7 @@ curl -X POST ${BASE}/api/events \\
                     resBody={`{
   "experiments": [
     {
-      "id": "exp_abc123",
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
       "name": "Signup Button Color",
       "key": "signup-button-color",
       "status": "running",
@@ -1055,12 +1046,12 @@ curl -X POST ${BASE}/api/events \\
                     path="/api/experiments/:id"
                     description="Get full experiment details including variants and targeting rules."
                     resBody={`{
-  "id": "exp_abc123",
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "name": "Signup Button Color",
   "key": "signup-button-color",
   "status": "running",
   "variants": [ ... ],
-  "targeting_rules": { "percentage": 100 },
+  "targeting_rules": [],
   "created_at": "2025-01-15T10:30:00Z",
   "started_at": "2025-01-16T08:00:00Z"
 }`}
@@ -1068,15 +1059,15 @@ curl -X POST ${BASE}/api/events \\
                     copied={copied}
                     onCopy={handleCopy}
                   />
-                  <Endpoint method="POST" path="/api/experiments/:id/start" description="Start an experiment. Moves it from draft to running. Users start being assigned immediately." resBody={`{ "id": "exp_abc123", "status": "running", "started_at": "2025-01-16T08:00:00Z" }`} id="ref-exp-start" copied={copied} onCopy={handleCopy} />
-                  <Endpoint method="POST" path="/api/experiments/:id/pause" description="Pause a running experiment. Existing assignments are kept, but no new users are assigned." resBody={`{ "id": "exp_abc123", "status": "paused" }`} id="ref-exp-pause" copied={copied} onCopy={handleCopy} />
-                  <Endpoint method="POST" path="/api/experiments/:id/complete" description="Mark an experiment as complete. This locks the results. Irreversible." resBody={`{ "id": "exp_abc123", "status": "completed", "completed_at": "2025-02-01T12:00:00Z" }`} id="ref-exp-complete" copied={copied} onCopy={handleCopy} />
+                  <Endpoint method="POST" path="/api/experiments/:id/start" description="Start an experiment. Moves it from draft to running. Users start being assigned immediately." resBody={`{ "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890", "status": "running", "started_at": "2025-01-16T08:00:00Z" }`} id="ref-exp-start" copied={copied} onCopy={handleCopy} />
+                  <Endpoint method="POST" path="/api/experiments/:id/pause" description="Pause a running experiment. Existing assignments are kept, but no new users are assigned." resBody={`{ "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890", "status": "paused" }`} id="ref-exp-pause" copied={copied} onCopy={handleCopy} />
+                  <Endpoint method="POST" path="/api/experiments/:id/complete" description="Mark an experiment as complete. This locks the results. Irreversible." resBody={`{ "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890", "status": "completed", "completed_at": "2025-02-01T12:00:00Z" }`} id="ref-exp-complete" copied={copied} onCopy={handleCopy} />
                   <Endpoint
                     method="GET"
                     path="/api/experiments/:id/results"
                     description="Get statistical results for a running or completed experiment. Includes frequentist, Bayesian, SRM, and power analysis."
                     resBody={`{
-  "experiment_id": "exp_abc123",
+  "experiment_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "status": "running",
   "total_assignments": 10482,
   "variants": [
@@ -1137,14 +1128,14 @@ curl -X POST ${BASE}/api/events \\
                     path="/api/assign"
                     description="Get a variant assignment for a single user. Deterministic -- the same user always gets the same variant."
                     reqBody={`{
-  "experiment_key": "signup-button-color",
-  "user_id": "visitor_abc",
-  "attributes": { "country": "US", "plan": "pro" }
+  "experimentKey": "signup-button-color",
+  "userId": "visitor_abc",
+  "context": { "country": "US", "plan": "pro" }
 }`}
                     resBody={`{
   "variant": "green",
-  "experiment_key": "signup-button-color",
-  "user_id": "visitor_abc"
+  "experimentKey": "signup-button-color",
+  "userId": "visitor_abc"
 }`}
                     id="ref-assign-single"
                     copied={copied}
@@ -1155,13 +1146,13 @@ curl -X POST ${BASE}/api/events \\
                     path="/api/assign/bulk"
                     description="Get assignments for multiple experiments at once. Useful on page load."
                     reqBody={`{
-  "user_id": "visitor_abc",
-  "experiment_keys": [
+  "userId": "visitor_abc",
+  "experimentKeys": [
     "signup-button-color",
     "pricing-page-layout",
     "onboarding-flow"
   ],
-  "attributes": { "country": "US" }
+  "context": { "country": "US" }
 }`}
                     resBody={`{
   "assignments": {
@@ -1169,7 +1160,7 @@ curl -X POST ${BASE}/api/events \\
     "pricing-page-layout": "control",
     "onboarding-flow": "streamlined"
   },
-  "user_id": "visitor_abc"
+  "userId": "visitor_abc"
 }`}
                     id="ref-assign-bulk"
                     copied={copied}
@@ -1190,12 +1181,12 @@ curl -X POST ${BASE}/api/events \\
                     path="/api/events"
                     description="Track a single event. Automatically associated with any active experiment the user is in."
                     reqBody={`{
-  "event_name": "signup_click",
-  "user_id": "visitor_abc",
+  "metricKey": "signup_click",
+  "userId": "visitor_abc",
   "value": 49.99,
   "properties": { "currency": "USD", "item_count": 3 }
 }`}
-                    resBody={`{ "success": true, "event_id": "evt_xyz789" }`}
+                    resBody={`{ "success": true }`}
                     id="ref-events-single"
                     copied={copied}
                     onCopy={handleCopy}
@@ -1207,19 +1198,19 @@ curl -X POST ${BASE}/api/events \\
                     reqBody={`{
   "events": [
     {
-      "event_name": "page_view",
-      "user_id": "visitor_abc",
+      "metricKey": "page_view",
+      "userId": "visitor_abc",
       "properties": { "page": "/signup" },
       "timestamp": "2025-01-16T08:12:00Z"
     },
     {
-      "event_name": "signup_click",
-      "user_id": "visitor_abc",
+      "metricKey": "signup_click",
+      "userId": "visitor_abc",
       "timestamp": "2025-01-16T08:14:30Z"
     }
   ]
 }`}
-                    resBody={`{ "success": true, "processed": 2, "failed": 0 }`}
+                    resBody={`{ "success": true, "count": 2 }`}
                     id="ref-events-batch"
                     copied={copied}
                     onCopy={handleCopy}
@@ -1242,12 +1233,12 @@ curl -X POST ${BASE}/api/events \\
   "name": "Revenue per User",
   "key": "revenue_per_user",
   "type": "revenue",
-  "event_name": "purchase",
+  "metricKey": "purchase",
   "aggregation": "sum",
   "unit": "USD"
 }`}
                     resBody={`{
-  "id": "met_abc123",
+  "id": "d4e5f6a7-b8c9-0123-def0-456789abcdef",
   "name": "Revenue per User",
   "key": "revenue_per_user",
   "type": "revenue",
@@ -1263,8 +1254,8 @@ curl -X POST ${BASE}/api/events \\
                     description="List all metric definitions."
                     resBody={`{
   "metrics": [
-    { "id": "met_abc123", "name": "Revenue per User", "key": "revenue_per_user", "type": "revenue" },
-    { "id": "met_def456", "name": "Signup Clicks", "key": "signup_clicks", "type": "conversion" }
+    { "id": "d4e5f6a7-b8c9-0123-def0-456789abcdef", "name": "Revenue per User", "key": "revenue_per_user", "type": "revenue" },
+    { "id": "e5f6a7b8-c9d0-1234-ef01-56789abcdef0", "name": "Signup Clicks", "key": "signup_clicks", "type": "conversion" }
   ],
   "total": 2
 }`}
@@ -1291,13 +1282,12 @@ curl -X POST ${BASE}/api/events \\
   "key": "dark_mode",
   "description": "Enable dark mode for users",
   "enabled": false,
-  "targeting_rules": {
-    "percentage": 0,
-    "attributes": { "plan": ["pro", "enterprise"] }
-  }
+  "targeting_rules": [
+    { "attribute": "plan", "operator": "in", "values": ["pro", "enterprise"] }
+  ]
 }`}
                     resBody={`{
-  "id": "flag_abc123",
+  "id": "f6a7b8c9-d0e1-2345-f012-6789abcdef01",
   "key": "dark_mode",
   "name": "Dark Mode",
   "enabled": false,
@@ -1307,21 +1297,21 @@ curl -X POST ${BASE}/api/events \\
                     copied={copied}
                     onCopy={handleCopy}
                   />
-                  <Endpoint method="GET" path="/api/flags" description="List all feature flags." resBody={`{ "flags": [{ "id": "flag_abc123", "key": "dark_mode", "name": "Dark Mode", "enabled": false }], "total": 1 }`} id="ref-flags-list" copied={copied} onCopy={handleCopy} />
-                  <Endpoint method="POST" path="/api/flags/:id/toggle" description="Toggle a feature flag on or off." reqBody={`{ "enabled": true }`} resBody={`{ "id": "flag_abc123", "key": "dark_mode", "enabled": true }`} id="ref-flags-toggle" copied={copied} onCopy={handleCopy} />
+                  <Endpoint method="GET" path="/api/flags" description="List all feature flags." resBody={`{ "flags": [{ "id": "f6a7b8c9-d0e1-2345-f012-6789abcdef01", "key": "dark_mode", "name": "Dark Mode", "enabled": false }], "total": 1 }`} id="ref-flags-list" copied={copied} onCopy={handleCopy} />
+                  <Endpoint method="POST" path="/api/flags/:id/toggle" description="Toggle a feature flag on or off." reqBody={`{ "enabled": true }`} resBody={`{ "id": "f6a7b8c9-d0e1-2345-f012-6789abcdef01", "key": "dark_mode", "enabled": true }`} id="ref-flags-toggle" copied={copied} onCopy={handleCopy} />
                   <Endpoint
                     method="POST"
                     path="/api/flags/evaluate"
                     description="Evaluate a feature flag for a specific user."
                     reqBody={`{
-  "flag_key": "dark_mode",
-  "user_id": "visitor_abc",
-  "attributes": { "plan": "pro", "country": "US" }
+  "flagKey": "dark_mode",
+  "userId": "visitor_abc",
+  "context": { "plan": "pro", "country": "US" }
 }`}
                     resBody={`{
-  "flag_key": "dark_mode",
+  "flagKey": "dark_mode",
   "enabled": true,
-  "user_id": "visitor_abc",
+  "userId": "visitor_abc",
   "reason": "targeting_match"
 }`}
                     id="ref-flags-evaluate"

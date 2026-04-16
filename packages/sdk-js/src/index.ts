@@ -62,7 +62,7 @@ export class Abacus {
     this.context = config.context || {};
     this.storage = new Storage();
     this.queue = new EventQueue(
-      `${this.config.baseUrl}/api/v1/events`,
+      `${this.config.baseUrl}/api/events/batch`,
       this.config.apiKey
     );
 
@@ -216,7 +216,7 @@ export class Abacus {
         context: this.context,
       };
 
-      const res = await fetch(`${this.config.baseUrl}/api/v1/assignments`, {
+      const res = await fetch(`${this.config.baseUrl}/api/assign/bulk`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

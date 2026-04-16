@@ -10,8 +10,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const secret = req.headers['x-migrate-secret'] || req.query.secret;
-  if (secret !== process.env.MIGRATE_SECRET && secret !== 'initial-setup') {
-    return res.status(401).json({ error: 'Unauthorized' });
+  if (!process.env.MIGRATE_SECRET || secret !== process.env.MIGRATE_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized. Set MIGRATE_SECRET env var and pass it in x-migrate-secret header.' });
   }
 
   const DATABASE_URL = process.env.DATABASE_URL;

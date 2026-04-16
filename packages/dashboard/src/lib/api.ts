@@ -1,6 +1,7 @@
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 const API_KEY_STORAGE_KEY = 'abacus_api_key';
+const PROJECT_ID_STORAGE_KEY = 'abacus_project_id';
 
 export function getApiKey(): string {
   return localStorage.getItem(API_KEY_STORAGE_KEY) || '';
@@ -10,12 +11,21 @@ export function setApiKey(key: string): void {
   localStorage.setItem(API_KEY_STORAGE_KEY, key);
 }
 
+export function getProjectId(): string {
+  return localStorage.getItem(PROJECT_ID_STORAGE_KEY) || '';
+}
+
+export function setProjectId(id: string): void {
+  localStorage.setItem(PROJECT_ID_STORAGE_KEY, id);
+}
+
 export async function api<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
       'x-api-key': getApiKey(),
+      'x-project-id': getProjectId(),
       ...options?.headers,
     },
   });

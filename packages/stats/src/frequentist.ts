@@ -69,7 +69,7 @@ function proportionZTest(
   const seHa = Math.sqrt((p1 * (1 - p1)) / n1 + (p2 * (1 - p2)) / n2);
 
   const diff = p2 - p1;
-  const z = seH0 > 0 ? diff / seH0 : 0;
+  const z = seH0 > 0 ? diff / seH0 : (diff !== 0 ? (diff > 0 ? 1e10 : -1e10) : 0);
 
   // Raw p-value
   let rawP: number;
@@ -150,7 +150,8 @@ function meansTTest(
   // Welch's t-test
   const se = Math.sqrt(v1 / n1 + v2 / n2);
   const diff = m2 - m1;
-  const t = se > 0 ? diff / se : 0;
+  // When SE=0 and diff≠0, the signal is infinite — treat as maximally significant
+  const t = se > 0 ? diff / se : (diff !== 0 ? (diff > 0 ? 1e10 : -1e10) : 0);
 
   // Welch-Satterthwaite degrees of freedom
   const num = (v1 / n1 + v2 / n2) ** 2;

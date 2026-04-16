@@ -222,7 +222,7 @@ export class AbacusNode {
     this.config = config;
     this.cache = config.cacheAdapter || new MemoryCache();
     this.queue = new NodeEventQueue(
-      `${config.baseUrl}/api/v1/events`,
+      `${config.baseUrl}/api/events/batch`,
       config.apiKey,
       config.maxQueueSize,
       config.flushInterval
@@ -305,7 +305,7 @@ export class AbacusNode {
 
     // Fetch from server
     try {
-      const res = await fetch(`${this.config.baseUrl}/api/v1/assignments`, {
+      const res = await fetch(`${this.config.baseUrl}/api/assign/bulk`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
