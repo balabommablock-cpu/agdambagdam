@@ -17,6 +17,7 @@ import StatusBadge from '../components/StatusBadge';
 interface DashboardStats {
   activeExperiments: number;
   totalEvents: number;
+  uniqueUsers: number;
   totalFlags: number;
   experimentsNeedingAttention: Array<{
     id: string;
@@ -41,6 +42,7 @@ export default function Dashboard() {
   const stats: DashboardStats = data || {
     activeExperiments: 0,
     totalEvents: 0,
+    uniqueUsers: 0,
     totalFlags: 0,
     experimentsNeedingAttention: [],
     recentActivity: [],
@@ -92,7 +94,7 @@ export default function Dashboard() {
         />
         <StatCard
           label="Unique Users (7d)"
-          value={0}
+          value={stats.uniqueUsers}
           icon={Users}
           color="primary"
           format="compact"
