@@ -26,6 +26,7 @@ import eventsRouter from './routes/events';
 import flagsRouter from './routes/flags';
 import metricsRouter from './routes/metrics';
 import projectsRouter from './routes/projects';
+import dashboardRouter from './routes/dashboard';
 import { sendError } from './lib/errors';
 
 export interface CreateAppOptions {
@@ -122,6 +123,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.use('/api/flags', flagsRouter);
   app.use('/api/metrics', metricsRouter);
   app.use('/api/projects', projectsRouter);
+  app.use('/api/dashboard', dashboardRouter);
 
   // --- API 404 (only for /api/* — non-API falls through to SPA) ---
   app.use('/api', (_req: Request, res: Response) => {
