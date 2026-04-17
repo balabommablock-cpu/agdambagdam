@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import AuthGate from './components/AuthGate';
-import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Docs from './pages/Docs';
 import ExperimentList from './pages/ExperimentList';
@@ -18,7 +17,7 @@ function isLoggedIn(): boolean {
 }
 
 /** Renders children when logged in; shows AuthGate otherwise. Settings is always reachable
- *  so a new user can paste their API key without being bounced back to Landing. */
+ *  so a new user can paste their API key without being bounced into a gated loop. */
 function Protected({ feature, children }: { feature: string; children: React.ReactNode }) {
   if (!isLoggedIn()) return <AuthGate feature={feature} />;
   return <>{children}</>;
@@ -27,8 +26,17 @@ function Protected({ feature, children }: { feature: string; children: React.Rea
 export default function App() {
   return (
     <Routes>
-      {/* Public marketing landing. Logged-in users get the app shell at /. */}
-      <Route path="/" element={isLoggedIn() ? <Layout><Dashboard /></Layout> : <Landing />} />
+      {/*
+        `/` IS the product. Marketing lives at boredfolio.com/agdambagdam,
+        not here — we intentionally don't ship a second marketing landing
+        from this domain. When the visitor isn't logged in they see the
+        AuthGate (with instructions to get a key). Once logged in they see
+        the Dashboard overview.
+      */}
+      <Route
+        path="/"
+        element={<Layout><Protected feature="Dashboard"><Dashboard /></Protected></Layout>}
+      />
 
       {/* Docs are public. */}
       <Route path="/docs" element={<Layout><Docs /></Layout>} />
