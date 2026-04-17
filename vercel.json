@@ -8,8 +8,16 @@
       "includeFiles": "packages/server/src/**"
     }
   },
+  "crons": [
+    {
+      "path": "/api/demo-heartbeat",
+      "schedule": "*/15 * * * *"
+    }
+  ],
   "rewrites": [
     { "source": "/api/migrate", "destination": "/api/migrate.ts" },
+    { "source": "/api/seed-demo", "destination": "/api/seed-demo.ts" },
+    { "source": "/api/demo-heartbeat", "destination": "/api/demo-heartbeat.ts" },
     { "source": "/api/(.*)", "destination": "/api/index.ts" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
