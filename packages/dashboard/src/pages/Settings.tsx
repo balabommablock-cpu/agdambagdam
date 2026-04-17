@@ -17,7 +17,7 @@ const SDK_SNIPPETS = {
   javascript: {
     label: 'JavaScript (Browser)',
     language: 'javascript',
-    code: `import { AbacusClient } from '@abacus/sdk-js';
+    code: `import { AbacusClient } from 'agdambagdam';
 
 const abacus = new AbacusClient({
   apiKey: 'YOUR_API_KEY',
@@ -33,7 +33,7 @@ abacus.track('purchase', userId, { revenue: 49.99 });`,
   react: {
     label: 'React',
     language: 'jsx',
-    code: `import { AbacusProvider, useExperiment, useTrack } from '@abacus/sdk-js/react';
+    code: `import { AbacusProvider, useExperiment, useTrack } from 'agdambagdam/react';
 
 function App() {
   return (
@@ -59,7 +59,7 @@ function MyComponent() {
   node: {
     label: 'Node.js',
     language: 'javascript',
-    code: `const { AbacusClient } = require('@abacus/sdk-node');
+    code: `const { AbacusClient } = require('@agdambagdam/sdk-node');
 
 const abacus = new AbacusClient({
   apiKey: 'YOUR_API_KEY',

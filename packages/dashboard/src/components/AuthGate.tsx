@@ -13,15 +13,30 @@ export default function AuthGate({ feature }: { feature: string }) {
         <Key className="w-6 h-6 text-primary-600 dark:text-primary-400" />
       </div>
       <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-        Sign in to view {feature}
+        Unlock {feature}
       </h1>
       <p className="text-slate-600 dark:text-slate-400 max-w-md mb-6">
-        Agdam Bagdam is self-hosted. Run the platform locally, grab your API key, and paste it
-        into Settings to unlock the dashboard.
+        You need an API key to use the dashboard.
+        Copy the public demo key below to try it right now — or self-host to get your own key and private data.
       </p>
+
+      <div className="w-full max-w-md bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 mb-6 text-left">
+        <div className="text-xs font-mono uppercase tracking-wider text-slate-500 mb-2">
+          Public demo key (shared, rate-limited)
+        </div>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 font-mono text-sm text-slate-900 dark:text-white bg-white dark:bg-black px-3 py-2 rounded border border-slate-200 dark:border-slate-800 select-all">
+            demo-public-key
+          </code>
+        </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
+          This is a shared demo account. Good for trying the dashboard; don't use it for real customer data.
+        </p>
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-3">
         <Link to="/settings" className="btn-primary">
-          Paste API Key
+          Paste the key in Settings
         </Link>
         <a
           href="https://github.com/balabommablock-cpu/agdambagdam#quick-start"
@@ -32,18 +47,6 @@ export default function AuthGate({ feature }: { feature: string }) {
           Self-Host Guide <ExternalLink className="w-4 h-4" />
         </a>
       </div>
-      <p className="text-xs text-slate-400 mt-6">
-        No hosted signup yet —{' '}
-        <a
-          className="underline hover:text-slate-600"
-          href="https://github.com/balabommablock-cpu/agdambagdam/issues/1"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          track progress
-        </a>
-        .
-      </p>
     </div>
   );
 }
