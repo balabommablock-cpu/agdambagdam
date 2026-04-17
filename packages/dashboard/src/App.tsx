@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import AuthGate from './components/AuthGate';
@@ -12,8 +13,39 @@ import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 
+const DEMO_API_KEY = 'demo-public-key';
+const DEMO_PROJECT_ID = '0b799a9c-e1f2-4a0c-8875-df482dacc6e7';
+
 function isLoggedIn(): boolean {
   return !!localStorage.getItem('abacus_api_key');
+}
+
+/**
+ * If the URL includes ?demo=1, auto-apply the shared demo credentials so the
+ * visitor lands inside a logged-in dashboard immediately. Used by the marketing
+ * iframe at boredfolio.com/agdambagdam — lets them see the product instead of
+ * the AuthGate. Strips the query param after to keep the URL clean and prevent
+ * re-triggering on reload.
+ */
+function useDemoAutoLogin() {
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('demo') === '1' && !localStorage.getItem('abacus_api_key')) {
+        localStorage.setItem('abacus_api_key', DEMO_API_KEY);
+        localStorage.setItem('abacus_project_id', DEMO_PROJECT_ID);
+        params.delete('demo');
+        const qs = params.toString();
+        const url = window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash;
+        window.history.replaceState(null, '', url);
+        // Router state is already mounted — force a reload so Protected
+        // routes re-evaluate with the new localStorage value.
+        window.location.reload();
+      }
+    } catch {
+      /* private mode etc. — fall through and let AuthGate handle it */
+    }
+  }, []);
 }
 
 /** Renders children when logged in; shows AuthGate otherwise. Settings is always reachable
@@ -24,6 +56,7 @@ function Protected({ feature, children }: { feature: string; children: React.Rea
 }
 
 export default function App() {
+  useDemoAutoLogin();
   return (
     <Routes>
       {/*
