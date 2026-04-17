@@ -11,7 +11,7 @@
   "crons": [
     {
       "path": "/api/demo-heartbeat",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 6 * * *"
     }
   ],
   "rewrites": [

@@ -21,10 +21,12 @@ const DEMO_API_KEY = 'demo-public-key';
 const EXPERIMENT_KEY = 'button-color-test';
 const METRIC_KEY = 'signup-click';
 
-// Per call: drop ~10–15 visitors into the experiment. Realistic enough to
-// make the dashboard feel alive without spamming the database.
-const MIN_VISITORS = 10;
-const MAX_VISITORS = 15;
+// Per call: drop a day's worth of visitors into the experiment. Vercel Hobby
+// tier caps cron frequency at once per day, so we simulate a whole day's
+// traffic in one go. Plus the sandbox widget on the landing adds organic
+// real-visitor events between cron runs.
+const MIN_VISITORS = 280;
+const MAX_VISITORS = 380;
 
 // Variant conversion rates. Skewed so green wins by ~50% relative lift —
 // enough that the Bayesian readout will eventually call green the winner,
