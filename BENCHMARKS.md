@@ -47,6 +47,7 @@ Some methods make *operational* guarantees — "Type I error ≤ α under the nu
 |---|---|---|
 | Frequentist Z-test | Type I error ≤ α | 10,000 trials under H₀, count rejections, 95% CI for rejection rate must contain α |
 | Sequential test (all spending functions) | Overall Type I error ≤ α across all looks | 10,000 trials, count rejections at any look, CI must contain α |
+| Naive peeking control (no correction) | Demonstrates industry default inflates Type I error beyond 2α | 10,000 trials, 25 unadjusted looks; observed rate is expected to exceed α — reported as evidence of what uncorrected peeking produces (Armitage–McPherson–Rowe 1969) |
 | Sequential test | Overall power ≥ design target | 10,000 trials under specified effect, count rejections, CI must contain target |
 | SRM detection | Type I error ≤ α under true 50/50 split | 10,000 trials, count false-positive SRM flags, CI must contain α |
 | MAB — Thompson Sampling | Regret ≤ O(log T · K · max_arm_gap) | 1,000 runs × 10,000 pulls, compare to Lai-Robbins bound |

@@ -229,6 +229,81 @@ function sequentialTypeI(
   };
 }
 
+/**
+ * Naive peeking Type I error — no sequential correction.
+ *
+ * Simulates the behaviour most A/B testing dashboards ship by default:
+ * a PM (or the vendor's own "significance" indicator) checks the experiment
+ * repeatedly over its lifetime, and the test is called "won" the first time
+ * the unadjusted p-value crosses α.
+ *
+ * This is NOT a method in @abacus/stats — it's a control case that
+ * demonstrates what happens when alpha-spending is absent. Every other
+ * vendor's "check results anytime" feature implicitly runs this decision rule
+ * unless they explicitly correct for it.
+ *
+ * Expected Type I error (Armitage–McPherson–Rowe 1969, approx.):
+ *   looks=5  → ~14%
+ *   looks=10 → ~19%
+ *   looks=25 → ~27%
+ *   looks=50 → ~32%
+ *
+ * We use 25 looks as a realistic industry scenario: an experiment that runs
+ * for ~5 weeks with a daily dashboard check.
+ */
+function naivePeekingTypeI(cfg: Config, rng: () => number): SuiteResult {
+  const totalN = 2500;
+  const maxLooks = 25;
+  const perLook = totalN / maxLooks;
+  const p = 0.1;
+  const { trials, alpha } = cfg;
+
+  let rejections = 0;
+  for (let i = 0; i < trials; i++) {
+    let cConv = 0;
+    let tConv = 0;
+    let cN = 0;
+    let tN = 0;
+    let rejected = false;
+    for (let look = 1; look <= maxLooks; look++) {
+      for (let k = 0; k < perLook; k++) {
+        cConv += bernoulli(rng, p);
+        tConv += bernoulli(rng, p);
+        cN++;
+        tN++;
+      }
+      const cMean = cConv / cN;
+      const tMean = tConv / tN;
+      const c: SampleData = { count: cN, conversions: cConv, mean: cMean, variance: cMean * (1 - cMean) };
+      const t: SampleData = { count: tN, conversions: tConv, mean: tMean, variance: tMean * (1 - tMean) };
+      // Plain unadjusted frequentist test — no alpha spending.
+      const r = frequentistTest(c, t, { alpha });
+      if (r.significant) {
+        rejected = true;
+        break;
+      }
+    }
+    if (rejected) rejections++;
+  }
+
+  const rate = rejections / trials;
+  const ci = wilson(rejections, trials);
+  // The whole point: under naive peeking, the observed rate should FAR EXCEED α.
+  // We assert that (rate > 2·α) to make this a machine-checkable claim — the
+  // vendor default inflates Type I error by at least 2× the nominal rate.
+  return {
+    name: 'Naive peeking (no correction) — overall Type I error',
+    metric: 'False positive rate under unadjusted repeated significance testing',
+    target: alpha,
+    observed: rate,
+    ci95: ci,
+    guarantee: 'equals', // target is α; we EXPECT this to fail (observed > target) — that's the claim
+    pass: ci[0] > 2 * alpha, // pass iff observed > 2α (vendor default at least doubles false positives)
+    trials,
+    notes: `${maxLooks} looks, n=${totalN} total per arm, p=${p}; "pass" here means "industry default is demonstrably broken" (observed > 2α)`,
+  };
+}
+
 /** SRM detector Type I error under a true 50/50 split. */
 function srmTypeI(cfg: Config, rng: () => number): SuiteResult {
   const totalUsers = 10000;
@@ -419,6 +494,7 @@ function main(): void {
   results.push(frequentistTypeI(cfg, rng));
   results.push(sequentialTypeI(cfg, rng, 'obrien-fleming'));
   results.push(sequentialTypeI(cfg, rng, 'pocock'));
+  results.push(naivePeekingTypeI(cfg, rng));
   results.push(srmTypeI(cfg, rng));
   results.push(cupedVarianceReduction(cfg, rng));
 
